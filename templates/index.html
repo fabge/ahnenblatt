@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Startseite{% endblock %}
+
+{% block content %}
+<div class="hero">
+  <h1>🌳 Familiengeschichte</h1>
+  <p class="hero-sub">{{ total }} Personen in diesem Stammbaum</p>
+  <div class="hero-actions">
+    <a class="btn btn-primary" href="/people">Alle Personen</a>
+    <a class="btn btn-secondary" href="/families">Alle Familien</a>
+  </div>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-num">{{ total }}</div>
+    <div class="stat-label">Personen</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num">{{ top_surnames|length }}</div>
+    <div class="stat-label">Häufigste Nachnamen</div>
+  </div>
+</div>
+
+<section class="section">
+  <h2>Häufigste Familiennamen</h2>
+  <div class="surname-list">
+    {% for surname, count in top_surnames %}
+    <a class="surname-chip" href="/people?q={{ surname }}">
+      {{ surname }} <span class="chip-count">{{ count }}</span>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="section">
+  <h2>Schnellsuche</h2>
+  <form action="/people" method="get" class="search-form">
+    <input type="text" name="q" placeholder="Name eingeben…" class="search-input">
+    <button type="submit" class="btn btn-primary">Suchen</button>
+  </form>
+</section>
+{% endblock %}
+
+{% block footer_info %}{{ total }} Personen geladen{% endblock %}

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Stammbaum{% endblock %} – Ahnenblatt</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-brand">
+      <a href="/">🌳 Stammbaum</a>
+    </div>
+    <div class="nav-search">
+      <input type="text" id="global-search" placeholder="Person suchen…" autocomplete="off">
+      <div id="search-results" class="search-dropdown hidden"></div>
+    </div>
+    <div class="nav-links">
+      <a href="/people">Personen</a>
+      <a href="/families">Familien</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    <p>Ahnenblatt Viewer &middot; {% block footer_info %}{% endblock %}</p>
+  </footer>
+
+  <script src="{{ url_for('static', filename='search.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Personen{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Personen</h1>
+  <span class="badge">{{ people|length }} Ergebnisse</span>
+</div>
+
+<form action="/people" method="get" class="filter-bar">
+  <input type="text" name="q" value="{{ query }}" placeholder="Name suchen…" class="search-input">
+  <select name="sex" class="select-input">
+    <option value="">Alle</option>
+    <option value="M" {% if sex_filter == 'M' %}selected{% endif %}>Männlich</option>
+    <option value="F" {% if sex_filter == 'F' %}selected{% endif %}>Weiblich</option>
+  </select>
+  <button type="submit" class="btn btn-primary">Filtern</button>
+  {% if query or sex_filter %}
+  <a href="/people" class="btn btn-secondary">Zurücksetzen</a>
+  {% endif %}
+</form>
+
+<div class="people-grid">
+  {% for person in people %}
+  <a class="person-card" href="/person/{{ person.id|replace('@','') }}">
+    <div class="person-avatar {% if person.sex == 'M' %}avatar-m{% elif person.sex == 'F' %}avatar-f{% else %}avatar-u{% endif %}">
+      {{ person.given[0] if person.given and person.given not in ('...', '.....') else '?' }}
+    </div>
+    <div class="person-info">
+      <div class="person-name">{{ person.full_name }}</div>
+      {% if person.short_life %}
+      <div class="person-life">{{ person.short_life }}</div>
+      {% endif %}
+      {% if person.birth_place or person.death_place %}
+      <div class="person-place">
+        {% if person.birth_place %}📍 {{ person.birth_place }}{% endif %}
+      </div>
+      {% endif %}
+    </div>
+    <div class="person-sex-icon">
+      {% if person.sex == 'M' %}♂{% elif person.sex == 'F' %}♀{% endif %}
+    </div>
+  </a>
+  {% else %}
+  <p class="empty-state">Keine Personen gefunden.</p>
+  {% endfor %}
+</div>
+{% endblock %}
