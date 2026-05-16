@@ -61,11 +61,3 @@ body {
 }
 .tree-card-sub { color: rgba(60, 60, 67, 0.6); font-size: 11px; }
 .dark .tree-card-sub { color: rgba(235, 235, 245, 0.6); }
-
-/* ─── Photo fullscreen ─── */
-
-.photo-fullscreen {
-  position: fixed; inset: 0; background: #000; z-index: 9999;
-  display: flex; align-items: center; justify-content: center;
-}
-.photo-fullscreen img { max-width: 100%; max-height: 100%; }

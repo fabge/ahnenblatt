@@ -66,11 +66,16 @@ export function PersonDetailView({
 
   function close() {
     setOpened(false);
-    setTimeout(onClose, 250);
   }
 
   return (
-    <Popup opened={opened} onBackdropClick={close}>
+    <Popup
+      opened={opened}
+      onBackdropClick={close}
+      onTransitionEnd={(e: React.TransitionEvent<HTMLElement>) => {
+        if (!opened && e.target === e.currentTarget) onClose();
+      }}
+    >
       <Page>
         <Navbar
           title={fullName(person)}

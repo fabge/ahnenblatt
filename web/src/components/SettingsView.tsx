@@ -1,8 +1,21 @@
-import { Page, Navbar, BlockTitle, List, ListItem, Block, Button } from 'konsta/react';
+import { useState } from 'react';
+import {
+  Page,
+  Navbar,
+  BlockTitle,
+  List,
+  ListItem,
+  Block,
+  Button,
+  Dialog,
+  DialogButton,
+} from 'konsta/react';
 import { useStore } from '../store';
 
 export function SettingsView() {
   const { folderName, persons, reset } = useStore();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
   return (
     <Page>
       <Navbar title="Einstellungen" large transparent />
@@ -16,13 +29,32 @@ export function SettingsView() {
           large
           rounded
           colors={{ fillBgIos: 'bg-red-500', fillBgMaterial: 'bg-red-500' }}
-          onClick={() => {
-            if (confirm('Wirklich alle Daten löschen und neuen Ordner wählen?')) reset();
-          }}
+          onClick={() => setConfirmOpen(true)}
         >
           Anderen Ordner laden
         </Button>
       </Block>
+
+      <Dialog
+        opened={confirmOpen}
+        onBackdropClick={() => setConfirmOpen(false)}
+        title="Daten löschen?"
+        content="Alle importierten Personen und Fotos werden entfernt, und du wählst anschließend einen neuen Ordner."
+        buttons={
+          <>
+            <DialogButton onClick={() => setConfirmOpen(false)}>Abbrechen</DialogButton>
+            <DialogButton
+              strong
+              onClick={() => {
+                setConfirmOpen(false);
+                reset();
+              }}
+            >
+              Löschen
+            </DialogButton>
+          </>
+        }
+      />
     </Page>
   );
 }

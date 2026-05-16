@@ -5,7 +5,7 @@ export default {
     './src/**/*.{js,ts,jsx,tsx}',
     './node_modules/konsta/**/*.{js,mjs}',
   ],
-  darkMode: 'media',
+  darkMode: 'class',
   theme: { extend: {} },
   plugins: [],
 };
