@@ -4,6 +4,7 @@ struct PeopleListView: View {
     @EnvironmentObject var store: FamilyTreeStore
     @State private var query = ""
     @State private var sexFilter = ""
+    @State private var selectedId: String?
 
     private var filtered: [Person] {
         store.persons.values
@@ -17,8 +18,14 @@ struct PeopleListView: View {
 
     var body: some View {
         NavigationStack {
+            // Single sheet driven by list-level selection. Per-row sheets
+            // inside a .searchable list could swallow the first tap while the
+            // search field was first responder — lifting the sheet up fixes it.
             List(filtered) { person in
-                PersonRow(person: person)
+                Button { selectedId = person.id } label: {
+                    PersonRowContent(person: person)
+                }
+                .buttonStyle(.plain)
             }
             .searchable(text: $query, prompt: "Name suchen…")
             .navigationTitle("Personen")
@@ -39,6 +46,13 @@ struct PeopleListView: View {
                 if filtered.isEmpty {
                     ContentUnavailableView.search(text: query)
                 }
+            }
+            .sheet(item: Binding(
+                get: { selectedId.flatMap { store.persons[$0] } },
+                set: { selectedId = $0?.id }
+            )) { person in
+                PersonDetailView(person: person)
+                    .environmentObject(store)
             }
         }
     }

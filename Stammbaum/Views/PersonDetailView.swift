@@ -4,6 +4,7 @@ struct PersonDetailView: View {
     let person: Person
     @EnvironmentObject var store: FamilyTreeStore
     @Environment(\.dismiss) private var dismiss
+    @State private var showPhotoFullscreen = false
 
     var body: some View {
         NavigationStack {
@@ -11,7 +12,10 @@ struct PersonDetailView: View {
                 // ── Header ──────────────────────────────────────────────────
                 Section {
                     HStack(spacing: 16) {
-                        PersonPhotoView(person: person, size: 80)
+                        Button { showPhotoFullscreen = true } label: {
+                            PersonPhotoView(person: person, size: 80)
+                        }
+                        .buttonStyle(.plain)
                         VStack(alignment: .leading, spacing: 4) {
                             Text(person.fullName)
                                 .font(.title2.bold())
@@ -107,6 +111,7 @@ struct PersonDetailView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         store.rootPersonId = person.id
+                        store.selectedTab = 0
                         dismiss()
                     } label: {
                         Label("Stammbaum", systemImage: "arrow.triangle.branch")
@@ -117,6 +122,10 @@ struct PersonDetailView: View {
             // whole drill-down stack back to the main tab.
             .onChange(of: store.rootPersonId) { _, newId in
                 if newId != person.id { dismiss() }
+            }
+            .fullScreenCover(isPresented: $showPhotoFullscreen) {
+                PhotoFullscreenView(person: person)
+                    .environmentObject(store)
             }
         }
     }
@@ -160,20 +169,28 @@ struct PersonRow: View {
 
     var body: some View {
         Button { showDetail = true } label: {
-            HStack(spacing: 12) {
-                PersonPhotoView(person: person, size: 40)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(person.fullName).font(.body).foregroundStyle(.primary)
-                    if !person.shortLife.isEmpty {
-                        Text(person.shortLife).font(.caption).foregroundStyle(.secondary)
-                    }
-                }
-                Spacer()
-                Image(systemName: "chevron.right").foregroundStyle(.tertiary).font(.caption)
-            }
+            PersonRowContent(person: person)
         }
         .sheet(isPresented: $showDetail) {
             PersonDetailView(person: person).environmentObject(store)
+        }
+    }
+}
+
+struct PersonRowContent: View {
+    let person: Person
+
+    var body: some View {
+        HStack(spacing: 12) {
+            PersonPhotoView(person: person, size: 40)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(person.fullName).font(.body).foregroundStyle(.primary)
+                if !person.shortLife.isEmpty {
+                    Text(person.shortLife).font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            Spacer()
+            Image(systemName: "chevron.right").foregroundStyle(.tertiary).font(.caption)
         }
     }
 }

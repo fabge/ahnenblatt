@@ -20,6 +20,10 @@ final class FamilyTreeStore: ObservableObject {
     }
     @Published var loadError: String?
 
+    // Drives the bottom TabView selection so deep views (e.g. PersonDetail's
+    // "Stammbaum" button) can jump to a specific tab.
+    @Published var selectedTab: Int = 0
+
     // Canvas state lives in the store so zoom/pan survives tab switches and
     // any view re-creation. Reset on folder load and root change.
     @Published var canvasScale: CGFloat = 1.0

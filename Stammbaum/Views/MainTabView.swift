@@ -4,7 +4,7 @@ struct MainTabView: View {
     @EnvironmentObject var store: FamilyTreeStore
 
     var body: some View {
-        TabView {
+        TabView(selection: $store.selectedTab) {
             // ── Tree ──
             Group {
                 if let rid = store.rootPersonId {
@@ -19,14 +19,17 @@ struct MainTabView: View {
                 }
             }
             .tabItem { Label("Stammbaum", systemImage: "arrow.triangle.branch") }
+            .tag(0)
 
             // ── People ──
             PeopleListView()
                 .tabItem { Label("Personen", systemImage: "person.2") }
+                .tag(1)
 
             // ── Settings ──
             SettingsView()
                 .tabItem { Label("Einstellungen", systemImage: "gearshape") }
+                .tag(2)
         }
     }
 
