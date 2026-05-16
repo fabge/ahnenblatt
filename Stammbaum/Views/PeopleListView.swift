@@ -22,6 +22,7 @@ struct PeopleListView: View {
             }
             .searchable(text: $query, prompt: "Name suchen…")
             .navigationTitle("Personen")
+            .toolbarTitleDisplayMode(.inlineLarge)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {

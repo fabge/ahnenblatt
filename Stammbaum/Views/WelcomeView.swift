@@ -23,7 +23,9 @@ struct WelcomeView: View {
                     .multilineTextAlignment(.center)
             }
 
-            if let error = store.loadError {
+            // Only surface a load error after an active pick attempt
+            // (folderURL set). On a fresh state we stay silent.
+            if let error = store.loadError, store.folderURL != nil {
                 Text(error)
                     .font(.callout)
                     .foregroundStyle(.red)

@@ -4,7 +4,6 @@ struct PersonDetailView: View {
     let person: Person
     @EnvironmentObject var store: FamilyTreeStore
     @Environment(\.dismiss) private var dismiss
-    @State private var showTree = false
 
     var body: some View {
         NavigationStack {
@@ -98,14 +97,6 @@ struct PersonDetailView: View {
                     }
                 }
 
-                // ── Tree action ───────────────────────────────────────────────
-                Section {
-                    Button {
-                        showTree = true
-                    } label: {
-                        Label("Stammbaum dieser Person", systemImage: "arrow.triangle.branch")
-                    }
-                }
             }
             .navigationTitle(person.fullName)
             .navigationBarTitleDisplayMode(.inline)
@@ -113,11 +104,19 @@ struct PersonDetailView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Schließen") { dismiss() }
                 }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        store.rootPersonId = person.id
+                        dismiss()
+                    } label: {
+                        Label("Stammbaum", systemImage: "arrow.triangle.branch")
+                    }
+                }
             }
-            .navigationDestination(isPresented: $showTree) {
-                TreeCanvasView(rootId: person.id)
-                    .navigationTitle("Stammbaum")
-                    .environmentObject(store)
+            // Cascade-dismiss: if a child detail view changed the root, fold the
+            // whole drill-down stack back to the main tab.
+            .onChange(of: store.rootPersonId) { _, newId in
+                if newId != person.id { dismiss() }
             }
         }
     }

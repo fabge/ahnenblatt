@@ -7,10 +7,19 @@ final class FamilyTreeStore: ObservableObject {
     @Published var families: [String: Family] = [:]
     @Published var isLoaded = false
     @Published var folderURL: URL?
-    @Published var rootPersonId: String?
+    @Published var rootPersonId: String? {
+        didSet {
+            if let id = rootPersonId {
+                UserDefaults.standard.set(id, forKey: rootPersonIdKey)
+            } else {
+                UserDefaults.standard.removeObject(forKey: rootPersonIdKey)
+            }
+        }
+    }
     @Published var loadError: String?
 
     private let bookmarkKey = "familyFolderBookmark"
+    private let rootPersonIdKey = "rootPersonId"
 
     // MARK: – Loading
 
@@ -29,8 +38,12 @@ final class FamilyTreeStore: ObservableObject {
         self.families = f
         self.isLoaded = !p.isEmpty
 
-        // Default root: first person with the most descendants
-        if rootPersonId == nil || persons[rootPersonId!] == nil {
+        // Restore persisted root if it still exists in the loaded data,
+        // otherwise pick the most-ancestral person.
+        if let saved = UserDefaults.standard.string(forKey: rootPersonIdKey),
+           persons[saved] != nil {
+            rootPersonId = saved
+        } else if rootPersonId == nil || persons[rootPersonId!] == nil {
             rootPersonId = mostAncestralPerson()
         }
     }
@@ -57,16 +70,28 @@ final class FamilyTreeStore: ObservableObject {
         var stale = false
         guard let url = try? URL(
             resolvingBookmarkData: data,
-            options: .withoutUI,
+            options: [],
             relativeTo: nil,
             bookmarkDataIsStale: &stale
-        ) else { return }
+        ) else {
+            // Truly corrupt bookmark — wipe it.
+            UserDefaults.standard.removeObject(forKey: bookmarkKey)
+            return
+        }
         if stale { saveBookmark(for: url) }
         await load(from: url)
+        // Keep the bookmark around even if this load didn't find a .ged —
+        // the folder may temporarily lack content (e.g. iCloud not synced),
+        // and the user can retry. Just clean up surfaced state.
+        if !isLoaded {
+            loadError = nil
+            folderURL = nil
+        }
     }
 
     func clearFolder() {
         UserDefaults.standard.removeObject(forKey: bookmarkKey)
+        UserDefaults.standard.removeObject(forKey: rootPersonIdKey)
         persons = [:]
         families = [:]
         isLoaded = false
@@ -79,7 +104,34 @@ final class FamilyTreeStore: ObservableObject {
 
     func imageURL(for person: Person) -> URL? {
         guard !person.photoPath.isEmpty, let folder = folderURL else { return nil }
-        return folder.appendingPathComponent(person.photoPath)
+        // The folder URL came from a security-scoped bookmark/picker; we need an
+        // active scope to enumerate it. Callers may or may not hold one already
+        // (start is reference-counted, so nesting is safe).
+        let accessed = folder.startAccessingSecurityScopedResource()
+        defer { if accessed { folder.stopAccessingSecurityScopedResource() } }
+
+        let basename = (person.photoPath as NSString).lastPathComponent
+
+        for candidate in [folder.appendingPathComponent(person.photoPath),
+                          folder.appendingPathComponent(basename)] {
+            if FileManager.default.fileExists(atPath: candidate.path) { return candidate }
+        }
+
+        // Fall back to case-insensitive scan of immediate subdirectories
+        // (Windows GEDCOMs often embed absolute paths like C:\...\stammbaum Media\foo.jpg).
+        let target = basename.lowercased()
+        guard let subs = try? FileManager.default.contentsOfDirectory(
+            at: folder, includingPropertiesForKeys: [.isDirectoryKey]) else { return nil }
+        for sub in subs {
+            let isDir = (try? sub.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+            guard isDir,
+                  let files = try? FileManager.default.contentsOfDirectory(
+                    at: sub, includingPropertiesForKeys: nil) else { continue }
+            if let hit = files.first(where: { $0.lastPathComponent.lowercased() == target }) {
+                return hit
+            }
+        }
+        return nil
     }
 
     // MARK: – Family helpers
@@ -210,17 +262,23 @@ final class FamilyTreeStore: ObservableObject {
             }
         }
 
-        // Links: from child to parents
+        // Orthogonal elbow routing (matches the descendant layout):
+        // child-top → vertical → midY → horizontal across → midY → parent-bottom.
         for item in allItems {
             guard let childPos = nodePos[item.ahnNr] else { continue }
             let fatherNr = item.ahnNr * 2
             let motherNr = item.ahnNr * 2 + 1
             for parentNr in [fatherNr, motherNr] {
                 if let parentPos = nodePos[parentNr] {
-                    links.append(LayoutLink(
-                        x1: childPos.x, y1: childPos.y - ch / 2,
-                        x2: parentPos.x, y2: parentPos.y + ch / 2
-                    ))
+                    let childTop = childPos.y - ch / 2
+                    let parentBottom = parentPos.y + ch / 2
+                    let midY = (childTop + parentBottom) / 2
+                    links.append(LayoutLink(x1: childPos.x, y1: childTop,
+                                            x2: childPos.x, y2: midY))
+                    links.append(LayoutLink(x1: childPos.x, y1: midY,
+                                            x2: parentPos.x, y2: midY))
+                    links.append(LayoutLink(x1: parentPos.x, y1: midY,
+                                            x2: parentPos.x, y2: parentBottom))
                 }
             }
         }
@@ -345,7 +403,7 @@ final class FamilyTreeStore: ObservableObject {
 
     private func mostAncestralPerson() -> String? {
         // Find the person who appears most as an ancestor
-        var childIds = Set(families.values.flatMap { $0.childrenIds })
+        let childIds = Set(families.values.flatMap { $0.childrenIds })
         // People who are never a child in any family are likely root ancestors
         let roots = persons.keys.filter { !childIds.contains($0) }
         // Return first male root, or any root

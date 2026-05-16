@@ -2,7 +2,6 @@ import SwiftUI
 
 struct MainTabView: View {
     @EnvironmentObject var store: FamilyTreeStore
-    @State private var rootId: String = ""
 
     var body: some View {
         TabView {
@@ -12,7 +11,7 @@ struct MainTabView: View {
                     NavigationStack {
                         TreeCanvasView(rootId: rid)
                             .navigationTitle("Stammbaum")
-                            .toolbar { settingsToolbar }
+                            .toolbarTitleDisplayMode(.inlineLarge)
                     }
                 } else {
                     Text("Keine Person als Wurzel gewählt")
@@ -31,23 +30,6 @@ struct MainTabView: View {
         }
     }
 
-    private var settingsToolbar: some ToolbarContent {
-        ToolbarItem(placement: .topBarTrailing) {
-            Menu {
-                if let rid = store.rootPersonId, let p = store.persons[rid] {
-                    Text("Wurzel: \(p.fullName)").foregroundStyle(.secondary)
-                    Divider()
-                }
-                Button(role: .destructive) {
-                    store.clearFolder()
-                } label: {
-                    Label("Anderen Ordner wählen", systemImage: "folder.badge.minus")
-                }
-            } label: {
-                Image(systemName: "ellipsis.circle")
-            }
-        }
-    }
 }
 
 struct SettingsView: View {
@@ -82,6 +64,7 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Einstellungen")
+            .toolbarTitleDisplayMode(.inlineLarge)
         }
     }
 }
