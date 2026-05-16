@@ -14,8 +14,8 @@ final class FamilyTreeStore: ObservableObject {
             } else {
                 UserDefaults.standard.removeObject(forKey: rootPersonIdKey)
             }
-            // Changing the root person should re-center the canvas.
-            if oldValue != rootPersonId { canvasCentered = false }
+            // Changing the root person should re-center every mode's canvas.
+            if oldValue != rootPersonId { canvasByMode = [:] }
         }
     }
     @Published var loadError: String?
@@ -25,10 +25,21 @@ final class FamilyTreeStore: ObservableObject {
     @Published var selectedTab: Int = 0
 
     // Canvas state lives in the store so zoom/pan survives tab switches and
-    // any view re-creation. Reset on folder load and root change.
-    @Published var canvasScale: CGFloat = 1.0
-    @Published var canvasOffset: CGSize = .zero
-    @Published var canvasCentered: Bool = false
+    // any view re-creation. Keyed per mode so Vorfahren/Nachfahren each have
+    // their own remembered viewport. Reset on folder load and root change.
+    struct CanvasState {
+        var scale: CGFloat = 1.0
+        var offset: CGSize = .zero
+        var centered: Bool = false
+    }
+    @Published var canvasByMode: [String: CanvasState] = [:]
+
+    func canvasState(for mode: String) -> CanvasState {
+        canvasByMode[mode] ?? CanvasState()
+    }
+    func setCanvasState(_ state: CanvasState, for mode: String) {
+        canvasByMode[mode] = state
+    }
 
     private let bookmarkKey = "familyFolderBookmark"
     private let rootPersonIdKey = "rootPersonId"
@@ -37,9 +48,7 @@ final class FamilyTreeStore: ObservableObject {
 
     func load(from folderURL: URL) async {
         self.folderURL = folderURL
-        canvasCentered = false
-        canvasScale = 1.0
-        canvasOffset = .zero
+        canvasByMode = [:]
         let accessed = folderURL.startAccessingSecurityScopedResource()
         defer { if accessed { folderURL.stopAccessingSecurityScopedResource() } }
 

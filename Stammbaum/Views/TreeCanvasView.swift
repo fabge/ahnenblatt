@@ -10,21 +10,34 @@ struct TreeCanvasView: View {
     let rootId: String
 
     @State private var mode: TreeMode = .ancestors
-    @State private var generations = 4
+    @State private var generations = 99
     @State private var invert = false
     @State private var lastScale: CGFloat = 1.0
     @State private var lastOffset: CGSize = .zero
     @State private var selectedId: String?
 
-    // Pan/zoom state mirrors store-backed values so it survives tab switches.
+    // Pan/zoom state mirrors store-backed values keyed per mode, so each of
+    // Vorfahren / Nachfahren has its own viewport and tab switches preserve it.
     private var scale: CGFloat {
-        get { store.canvasScale } nonmutating set { store.canvasScale = newValue }
+        get { store.canvasState(for: mode.rawValue).scale }
+        nonmutating set {
+            var s = store.canvasState(for: mode.rawValue); s.scale = newValue
+            store.setCanvasState(s, for: mode.rawValue)
+        }
     }
     private var offset: CGSize {
-        get { store.canvasOffset } nonmutating set { store.canvasOffset = newValue }
+        get { store.canvasState(for: mode.rawValue).offset }
+        nonmutating set {
+            var s = store.canvasState(for: mode.rawValue); s.offset = newValue
+            store.setCanvasState(s, for: mode.rawValue)
+        }
     }
     private var didCenter: Bool {
-        get { store.canvasCentered } nonmutating set { store.canvasCentered = newValue }
+        get { store.canvasState(for: mode.rawValue).centered }
+        nonmutating set {
+            var s = store.canvasState(for: mode.rawValue); s.centered = newValue
+            store.setCanvasState(s, for: mode.rawValue)
+        }
     }
 
     // One-finger zoom (Google-Maps style): a quick tap arms the next touch's
@@ -169,9 +182,14 @@ struct TreeCanvasView: View {
             }
         }
         .onChange(of: rootId) { _, _ in center(geo: geo, layout: layout) }
-        .onChange(of: mode) { _, _ in center(geo: geo, layout: layout) }
-        .onChange(of: invert) { _, _ in center(geo: geo, layout: layout) }
-        .onChange(of: generations) { _, _ in center(geo: geo, layout: layout) }
+        // First time we visit a mode, center on its root. Subsequent visits
+        // preserve whatever viewport the user left it in.
+        .onChange(of: mode) { _, _ in
+            if !didCenter && geo.size.width > 100 && geo.size.height > 100 {
+                center(geo: geo, layout: layout)
+                didCenter = true
+            }
+        }
     }
 
     private func center(geo: GeometryProxy, layout: FamilyTreeStore.TreeLayout) {

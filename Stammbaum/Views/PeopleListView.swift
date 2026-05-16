@@ -7,10 +7,18 @@ struct PeopleListView: View {
     @State private var selectedId: String?
 
     private var filtered: [Person] {
-        store.persons.values
+        // Tokenize the query so "geiger fabian" matches a person whose full
+        // name contains both tokens regardless of order. Each token must hit
+        // somewhere in given+surname combined.
+        let tokens = query
+            .split(whereSeparator: { $0.isWhitespace })
+            .map(String.init)
+        return store.persons.values
             .filter { p in
-                (query.isEmpty || p.fullName.localizedCaseInsensitiveContains(query))
-                && (sexFilter.isEmpty || p.sex == sexFilter)
+                guard sexFilter.isEmpty || p.sex == sexFilter else { return false }
+                guard !tokens.isEmpty else { return true }
+                let hay = "\(p.givenName.gedClean) \(p.surname.gedClean)"
+                return tokens.allSatisfy { hay.localizedCaseInsensitiveContains($0) }
             }
             .sorted { $0.surname.gedClean < $1.surname.gedClean ||
                       ($0.surname.gedClean == $1.surname.gedClean && $0.givenName < $1.givenName) }

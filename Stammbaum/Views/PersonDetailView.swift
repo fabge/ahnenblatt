@@ -12,10 +12,14 @@ struct PersonDetailView: View {
                 // ── Header ──────────────────────────────────────────────────
                 Section {
                     HStack(spacing: 16) {
-                        Button { showPhotoFullscreen = true } label: {
+                        if store.imageURL(for: person) != nil {
+                            Button { showPhotoFullscreen = true } label: {
+                                PersonPhotoView(person: person, size: 80)
+                            }
+                            .buttonStyle(.plain)
+                        } else {
                             PersonPhotoView(person: person, size: 80)
                         }
-                        .buttonStyle(.plain)
                         VStack(alignment: .leading, spacing: 4) {
                             Text(person.fullName)
                                 .font(.title2.bold())
@@ -192,5 +196,9 @@ struct PersonRowContent: View {
             Spacer()
             Image(systemName: "chevron.right").foregroundStyle(.tertiary).font(.caption)
         }
+        // Make the full row a solid hit-target. Without this, taps on the Text
+        // area can be swallowed by SwiftUI's text-selection arbitration when
+        // the parent list is in .searchable mode.
+        .contentShape(Rectangle())
     }
 }
