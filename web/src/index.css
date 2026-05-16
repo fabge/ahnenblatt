@@ -1,8 +1,7 @@
+@import 'tailwindcss';
 @import 'konsta/react/theme.css';
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@custom-variant dark (&:where(.dark, .dark *));
 
 /* App-specific overrides Konsta doesn't cover — primarily the tree canvas. */
 
