@@ -12,12 +12,20 @@ struct TreeCanvasView: View {
     @State private var mode: TreeMode = .ancestors
     @State private var generations = 4
     @State private var invert = false
-    @State private var scale: CGFloat = 1.0
     @State private var lastScale: CGFloat = 1.0
-    @State private var offset: CGSize = .zero
     @State private var lastOffset: CGSize = .zero
-    @State private var didCenter = false
     @State private var selectedId: String?
+
+    // Pan/zoom state mirrors store-backed values so it survives tab switches.
+    private var scale: CGFloat {
+        get { store.canvasScale } nonmutating set { store.canvasScale = newValue }
+    }
+    private var offset: CGSize {
+        get { store.canvasOffset } nonmutating set { store.canvasOffset = newValue }
+    }
+    private var didCenter: Bool {
+        get { store.canvasCentered } nonmutating set { store.canvasCentered = newValue }
+    }
 
     // One-finger zoom (Google-Maps style): a quick tap arms the next touch's
     // drag to control scale instead of panning.
@@ -188,6 +196,10 @@ struct TreeCanvasView: View {
             .onChanged { v in
                 if !dragActive {
                     dragActive = true
+                    // Re-seed from store in case the view was re-created
+                    // (e.g. tab switch) and the @State values are stale.
+                    lastScale = scale
+                    lastOffset = offset
                     if Date().timeIntervalSince(lastTapAt) < 0.35 {
                         inZoomDrag = true
                         zoomAnchor = v.startLocation
@@ -235,6 +247,11 @@ struct TreeCanvasView: View {
     private var magnifyGesture: some Gesture {
         MagnifyGesture()
             .onChanged { v in
+                if v.magnification == 1.0 {
+                    // Pinch just started — re-seed in case @State is stale.
+                    lastScale = scale
+                    lastOffset = offset
+                }
                 let proposed = lastScale * v.magnification
                 let newScale = min(max(proposed, 0.15), 4)
                 let factor = newScale / lastScale

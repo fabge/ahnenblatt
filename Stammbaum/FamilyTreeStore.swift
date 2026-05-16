@@ -14,9 +14,17 @@ final class FamilyTreeStore: ObservableObject {
             } else {
                 UserDefaults.standard.removeObject(forKey: rootPersonIdKey)
             }
+            // Changing the root person should re-center the canvas.
+            if oldValue != rootPersonId { canvasCentered = false }
         }
     }
     @Published var loadError: String?
+
+    // Canvas state lives in the store so zoom/pan survives tab switches and
+    // any view re-creation. Reset on folder load and root change.
+    @Published var canvasScale: CGFloat = 1.0
+    @Published var canvasOffset: CGSize = .zero
+    @Published var canvasCentered: Bool = false
 
     private let bookmarkKey = "familyFolderBookmark"
     private let rootPersonIdKey = "rootPersonId"
@@ -25,6 +33,9 @@ final class FamilyTreeStore: ObservableObject {
 
     func load(from folderURL: URL) async {
         self.folderURL = folderURL
+        canvasCentered = false
+        canvasScale = 1.0
+        canvasOffset = .zero
         let accessed = folderURL.startAccessingSecurityScopedResource()
         defer { if accessed { folderURL.stopAccessingSecurityScopedResource() } }
 
@@ -57,8 +68,14 @@ final class FamilyTreeStore: ObservableObject {
     // MARK: – Bookmark
 
     func saveBookmark(for url: URL) {
+        // The picker URL is security-scoped — bookmarkData() must be called
+        // while a scope is active or the resulting bookmark can't be resolved
+        // back to a usable URL after relaunch. Default options (not
+        // .minimalBookmark) keep the security-scope payload.
+        let accessed = url.startAccessingSecurityScopedResource()
+        defer { if accessed { url.stopAccessingSecurityScopedResource() } }
         guard let data = try? url.bookmarkData(
-            options: .minimalBookmark,
+            options: [],
             includingResourceValuesForKeys: nil,
             relativeTo: nil
         ) else { return }
