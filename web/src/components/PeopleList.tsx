@@ -47,10 +47,9 @@ export function PeopleList({
 
   return (
     <Page name={pageName}>
-      <Navbar large>
+      <Navbar>
         {navLeft}
         <NavTitle>{title}</NavTitle>
-        <NavTitleLarge>{title}</NavTitleLarge>
       </Navbar>
 
       <Searchbar

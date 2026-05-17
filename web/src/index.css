@@ -173,6 +173,12 @@ body {
   pointer-events: none;
 }
 .tree-header .tree-header-button { pointer-events: auto; }
+
+/* Drop Framework7's iOS full-width glass blur on the bottom tabbar. */
+.ios .toolbar.tabbar::before,
+.ios .toolbar.tabbar::after {
+  display: none;
+}
 .tree-header-text { min-width: 0; }
 .tree-header-label {
   font-size: 11px;
