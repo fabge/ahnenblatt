@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import {
-  Page, Navbar, NavTitle, NavTitleLarge, BlockTitle, Block, List, ListItem, Toggle, Button, Icon,
+  Page, Navbar, NavTitle, NavTitleLarge, BlockTitle, Block, List, ListItem, Toggle, Icon,
 } from 'framework7-react';
 import { useStore } from '../store';
 import type { TreeMode, GenerationsPref } from '../store';
@@ -12,7 +12,7 @@ const GEN_OPTIONS: GenerationsPref[] = [1, 2, 3, 4, 5, 6, 7, 'all'];
 const genLabel = (g: GenerationsPref) => (g === 'all' ? 'Alle' : String(g));
 
 export function SettingsView() {
-  const { folderName, persons, families, prefs, setPrefs, importFiles } = useStore();
+  const { folderName, persons, families, prefs, setPrefs, importFiles, reset } = useStore();
   const fileRef = useRef<HTMLInputElement>(null);
 
   return (
@@ -23,16 +23,43 @@ export function SettingsView() {
       </Navbar>
 
       <BlockTitle>Geöffneter Ordner</BlockTitle>
-      <List strong inset mediaList dividers>
-        <ListItem
-          title={folderName || '–'}
-          text={`${Object.keys(persons).length} Personen · ${Object.keys(families).length} Familien`}
-        >
-          <Icon slot="media" f7="folder_fill" size={28} />
-          <Button slot="after" small round fill onClick={() => fileRef.current?.click()}>
-            Wechseln
-          </Button>
+      <List strong inset dividers>
+        <ListItem title="Ordner" after={folderName || '–'}>
+          <Icon slot="media" f7="folder_fill" size={22} />
         </ListItem>
+        {folderName && (
+          <ListItem
+            title="Personen"
+            after={`${Object.keys(persons).length} · ${Object.keys(families).length} Familien`}
+          >
+            <Icon slot="media" f7="person_2_fill" size={22} />
+          </ListItem>
+        )}
+        <ListItem
+          link="#"
+          title="Ordner wechseln"
+          onClick={(e: React.MouseEvent) => {
+            e.preventDefault();
+            fileRef.current?.click();
+          }}
+        >
+          <Icon slot="media" f7="arrow_2_circlepath" size={22} />
+        </ListItem>
+        {folderName && (
+          <ListItem
+            link="#"
+            title="Ordner entfernen"
+            className="text-red-500"
+            onClick={async (e: React.MouseEvent) => {
+              e.preventDefault();
+              if (window.confirm('Soll der geöffnete Ordner entfernt werden?')) {
+                await reset();
+              }
+            }}
+          >
+            <Icon slot="media" f7="trash" size={22} color="red" />
+          </ListItem>
+        )}
       </List>
       <input
         ref={fileRef}
@@ -60,7 +87,7 @@ export function SettingsView() {
           smartSelect
           smartSelectParams={{ openIn: 'popover', closeOnSelect: true }}
         >
-          <Icon slot="media" f7="square_stack_fill" size={22} />
+          <Icon slot="media" f7="rectangle_stack_person_crop_fill" size={22} />
           <select
             name="defaultMode"
             value={prefs.defaultMode}
@@ -76,7 +103,7 @@ export function SettingsView() {
           smartSelect
           smartSelectParams={{ openIn: 'popover', closeOnSelect: true }}
         >
-          <Icon slot="media" f7="chevron_down" size={22} />
+          <Icon slot="media" f7="list_number" size={22} />
           <select
             name="defaultGenerations"
             value={String(prefs.defaultGenerations)}

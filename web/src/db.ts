@@ -20,7 +20,6 @@ function db() {
     dbPromise = openDB(DB_NAME, DB_VERSION, {
       upgrade(d) {
         if (!d.objectStoreNames.contains('meta')) d.createObjectStore('meta');
-        // photos keyed by lowercase basename for case-insensitive lookup
         if (!d.objectStoreNames.contains('photos')) d.createObjectStore('photos');
       },
     });
@@ -51,32 +50,42 @@ export async function clearAll() {
   await d.clear('photos');
 }
 
+function normalizeKey(p: string): string {
+  return p.replace(/\\/g, '/').toLowerCase().normalize('NFC');
+}
+
 export async function putPhoto(path: string, blob: Blob) {
   const d = await db();
-  const key = path.replace(/\\/g, '/').toLowerCase();
+  const key = normalizeKey(path);
   await d.put('photos', blob, key);
 }
 
 export async function getPhoto(path: string): Promise<Blob | null> {
   const d = await db();
-  const normalized = path.replace(/\\/g, '/').toLowerCase();
+  const normalized = normalizeKey(path);
+  const basename = normalized.substring(normalized.lastIndexOf('/') + 1);
 
   // Exact match
   const exact = await d.get('photos', normalized);
   if (exact) return exact;
 
-  // Basename fallback
-  const basename = normalized.substring(normalized.lastIndexOf('/') + 1);
-  const byBasename = await d.get('photos', basename);
-  if (byBasename) return byBasename;
-
-  // Suffix scan fallback for cross-folder collision safety
+  // Scan all keys: suffix match first, then basename fallback.
+  // This handles both folder-picker layouts and ZIPs whose internal
+  // paths don't align with the GEDCOM's absolute Windows paths.
   const keys = await d.getAllKeys('photos');
+  let basenameMatch: string | null = null;
   for (const key of keys) {
     if (typeof key !== 'string') continue;
-    if (normalized.endsWith(key) || key.endsWith(normalized)) {
+    const keyNorm = normalizeKey(key);
+    if (keyNorm === normalized || keyNorm.endsWith(normalized) || normalized.endsWith(keyNorm)) {
       return await d.get('photos', key);
     }
+    if (!basenameMatch && keyNorm.substring(keyNorm.lastIndexOf('/') + 1) === basename) {
+      basenameMatch = key;
+    }
+  }
+  if (basenameMatch) {
+    return await d.get('photos', basenameMatch);
   }
   return null;
 }
@@ -84,5 +93,5 @@ export async function getPhoto(path: string): Promise<Blob | null> {
 /** Resolve a GEDCOM photoPath (may be Windows-absolute) to a lookup key. */
 export function photoKey(photoPath: string): string {
   if (!photoPath) return '';
-  return photoPath.replace(/\\/g, '/').toLowerCase();
+  return normalizeKey(photoPath);
 }

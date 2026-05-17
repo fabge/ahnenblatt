@@ -51,14 +51,14 @@ export function TreeCanvas({ layout, persons, mode, onPersonTap }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, layout.width, layout.height]);
 
-  // Reset centered flag when layout changes so re-centering runs.
-  const prevLayoutRef = useRef({ width: 0, height: 0 });
+  // Reset centered flag whenever the layout changes (new root, mode, generations, or dimensions).
+  const prevLayoutRef = useRef<TreeLayout | null>(null);
   useEffect(() => {
-    if (layout.width !== prevLayoutRef.current.width || layout.height !== prevLayoutRef.current.height) {
-      prevLayoutRef.current = { width: layout.width, height: layout.height };
+    if (prevLayoutRef.current !== layout) {
+      prevLayoutRef.current = layout;
       setVs((s) => ({ ...s, centered: false }));
     }
-  }, [layout.width, layout.height]);
+  }, [layout]);
 
   // Center on first show.
   useEffect(() => {
@@ -221,7 +221,15 @@ export function TreeCanvas({ layout, persons, mode, onPersonTap }: Props) {
   }
 
   function onDoubleClick() {
-    setVs({ scale: 1, tx: 0, ty: 0, centered: false });
+    const el = containerRef.current;
+    if (!el) return;
+    const cw = el.clientWidth;
+    const ch = el.clientHeight;
+    if (cw === 0 || ch === 0 || layout.width === 0 || layout.height === 0) return;
+    const scale = Math.min(cw / layout.width, ch / layout.height, 1) * 0.95;
+    const tx = (cw - layout.width * scale) / 2;
+    const ty = (ch - layout.height * scale) / 2;
+    setVs({ scale, tx, ty, centered: true });
   }
 
   return (

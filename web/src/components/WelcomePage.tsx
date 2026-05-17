@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Page, Block, Button, Card, Chip, Icon,
 } from 'framework7-react';
@@ -8,8 +8,13 @@ export function WelcomePage() {
   const { importFiles, importArchive, isImporting, importError } = useStore();
   const folderRef = useRef<HTMLInputElement>(null);
   const archiveRef = useRef<HTMLInputElement>(null);
+  const [importSource, setImportSource] = useState<'folder' | 'archive' | null>(null);
   const openFolderPicker = () => folderRef.current?.click();
   const openArchivePicker = () => archiveRef.current?.click();
+
+  useEffect(() => {
+    if (!isImporting) setImportSource(null);
+  }, [isImporting]);
 
   return (
     <Page name="welcome" noToolbar noNavbar className="welcome-page">
@@ -38,25 +43,27 @@ export function WelcomePage() {
                 raised
                 disabled={isImporting}
                 preloader
-                loading={isImporting}
-                iconF7="folder_fill"
+                loading={isImporting && importSource === 'folder'}
+                iconF7={isImporting && importSource === 'folder' ? undefined : 'folder_fill'}
                 iconSize={16}
                 onClick={openFolderPicker}
                 className="welcome-import-button"
               >
-                {isImporting ? 'Importiere…' : 'Ordner auswählen'}
+                {isImporting && importSource === 'folder' ? 'Importiere…' : 'Ordner auswählen'}
               </Button>
               <Button
                 large
                 round
                 raised
                 disabled={isImporting}
-                iconF7="archivebox_fill"
+                preloader
+                loading={isImporting && importSource === 'archive'}
+                iconF7={isImporting && importSource === 'archive' ? undefined : 'archivebox_fill'}
                 iconSize={16}
                 onClick={openArchivePicker}
                 className="welcome-import-button"
               >
-                ZIP auswählen
+                {isImporting && importSource === 'archive' ? 'Importiere…' : 'ZIP auswählen'}
               </Button>
             </div>
 
@@ -91,7 +98,10 @@ export function WelcomePage() {
         multiple
         hidden
         onChange={(e) => {
-          if (e.target.files && e.target.files.length > 0) importFiles(e.target.files);
+          if (e.target.files && e.target.files.length > 0) {
+            setImportSource('folder');
+            importFiles(e.target.files);
+          }
           e.target.value = '';
         }}
       />
@@ -102,7 +112,10 @@ export function WelcomePage() {
         hidden
         onChange={(e) => {
           const file = e.target.files?.[0];
-          if (file) importArchive(file);
+          if (file) {
+            setImportSource('archive');
+            importArchive(file);
+          }
           e.target.value = '';
         }}
       />
