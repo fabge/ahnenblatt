@@ -81,9 +81,21 @@ body {
   --f7-chip-text-color: var(--welcome-accent-dark);
 }
 
+.welcome-import-actions {
+  margin-top: 32px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
 .welcome-import-button {
   width: fit-content;
-  margin-top: 32px;
+  margin: 0;
+}
+.welcome-import-button.button-large {
+  min-width: 178px;
+}
+.welcome-import-button:not(.button-fill) {
+  --f7-button-text-color: var(--f7-theme-color);
 }
 .welcome-import-button .icon {
   margin-right: 8px;
@@ -156,6 +168,8 @@ body {
   }
   .welcome-import-button {
     width: 100%;
+  }
+  .welcome-import-actions {
     margin-top: 24px;
   }
   .welcome-requirements {
