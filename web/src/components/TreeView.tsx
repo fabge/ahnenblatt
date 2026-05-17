@@ -9,6 +9,14 @@ import {
   ListItem,
   Link,
 } from 'konsta/react';
+import { Check, SlidersHorizontal, ArrowUpDown, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { useStore } from '../store';
+import type { TreeMode, GenerationsPref } from '../store';
+import { ancestorLayout, descendantLayout, invertLayoutY } from '../layout';
+import { TreeCanvas } from './TreeCanvas';
+import { PersonDetailView } from './PersonDetailView';
+import { PeopleSidebar } from './PeopleSidebar';
+import { useMediaQuery } from '../useMediaQuery';
 
 function PopoverSectionLabel({ children }: { children: ReactNode }) {
   return (
@@ -17,24 +25,21 @@ function PopoverSectionLabel({ children }: { children: ReactNode }) {
     </div>
   );
 }
-import { Check, SlidersHorizontal, ArrowUpDown } from 'lucide-react';
-import { useStore } from '../store';
-import type { TreeMode, GenerationsPref } from '../store';
-import { ancestorLayout, descendantLayout, invertLayoutY } from '../layout';
-import { TreeCanvas } from './TreeCanvas';
-import { PersonDetailView } from './PersonDetailView';
 
 const GEN_OPTIONS: GenerationsPref[] = [1, 2, 3, 4, 5, 6, 7, 'all'];
 const GEN_LIMIT = 100;
 
 export function TreeView() {
-  const { rootPersonId, persons, families, prefs } = useStore();
+  const { rootPersonId, persons, families, prefs, setRootPerson } = useStore();
   const [mode, setMode] = useState<TreeMode>(prefs.defaultMode);
   const [generations, setGenerations] = useState<GenerationsPref>(prefs.defaultGenerations);
   const [inverted, setInverted] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuTargetRef = useRef<HTMLAnchorElement>(null);
+
+  const isWide = useMediaQuery('(min-width: 768px)');
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const layout = useMemo(() => {
     if (!rootPersonId || !persons[rootPersonId]) return null;
@@ -44,6 +49,18 @@ export function TreeView() {
       : descendantLayout(persons, families, rootPersonId, genLimit);
     return inverted ? invertLayoutY(base) : base;
   }, [persons, families, rootPersonId, mode, generations, inverted]);
+
+  const sidebarToggle = isWide ? (
+    <Link
+      onClick={() => setSidebarOpen((v) => !v)}
+      aria-label={sidebarOpen ? 'Seitenleiste ausblenden' : 'Seitenleiste einblenden'}
+      iconOnly
+    >
+      {sidebarOpen
+        ? <PanelLeftClose size={22} strokeWidth={2} />
+        : <PanelLeftOpen size={22} strokeWidth={2} />}
+    </Link>
+  ) : null;
 
   const menuButton = (
     <Link
@@ -56,33 +73,36 @@ export function TreeView() {
     </Link>
   );
 
-  if (!rootPersonId || !persons[rootPersonId]) {
-    return (
-      <Page>
-        <Navbar title="Stammbaum" large transparent />
-        <Block strong inset className="text-center">
-          <p className="opacity-60 text-sm">
-            Keine Wurzelperson gewählt. Öffne eine Person in der Personenliste und tippe „Als
-            Wurzel“.
-          </p>
-        </Block>
-      </Page>
-    );
-  }
+  const emptyState = (
+    <Block strong inset className="text-center">
+      <p className="opacity-60 text-sm">
+        Keine Wurzelperson gewählt. Öffne eine Person in der Personenliste und tippe „Als
+        Wurzel".
+      </p>
+    </Block>
+  );
 
-  return (
+  const treePane = (
     <Page>
-      <Navbar title="Stammbaum" large transparent right={menuButton} />
-      <div className="h-[calc(100dvh-140px)]">
-        {layout && (
+      <Navbar
+        title="Stammbaum"
+        large
+        transparent
+        left={sidebarToggle}
+        right={menuButton}
+      />
+      {layout ? (
+        <div className="h-[calc(100dvh-140px)]">
           <TreeCanvas
             layout={layout}
             persons={persons}
             mode={mode}
             onPersonTap={(id) => setSelectedId(id)}
           />
-        )}
-      </div>
+        </div>
+      ) : (
+        emptyState
+      )}
 
       <Popover
         opened={menuOpen}
@@ -141,4 +161,20 @@ export function TreeView() {
       )}
     </Page>
   );
+
+  if (isWide) {
+    return (
+      <div className="absolute inset-0 flex">
+        {sidebarOpen && (
+          <PeopleSidebar
+            activeId={rootPersonId}
+            onSelect={(id) => setRootPerson(id)}
+          />
+        )}
+        <main className="flex-1 relative">{treePane}</main>
+      </div>
+    );
+  }
+
+  return treePane;
 }
