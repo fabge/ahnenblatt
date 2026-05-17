@@ -19,10 +19,11 @@ const GEN_OPTIONS: GenerationsPref[] = [1, 2, 3, 4, 5, 6, 7, 'all'];
 const genLabel = (g: GenerationsPref) => (g === 'all' ? 'Alle' : String(g));
 
 export function SettingsView() {
-  const { folderName, persons, families, prefs, setPrefs, reset } = useStore();
+  const { folderName, persons, families, prefs, setPrefs, importFiles } = useStore();
 
   const modeRowRef = useRef<HTMLLIElement>(null);
   const genRowRef = useRef<HTMLLIElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const [modeOpen, setModeOpen] = useState(false);
   const [genOpen, setGenOpen] = useState(false);
 
@@ -45,11 +46,26 @@ export function SettingsView() {
         </div>
         <button
           type="button"
-          onClick={() => reset()}
+          onClick={() => fileRef.current?.click()}
           className="shrink-0 px-3 h-8 rounded-full bg-black/5 dark:bg-white/10 text-[14px] font-medium text-[#8b6a45] active:opacity-60"
         >
           Wechseln
         </button>
+        <input
+          ref={fileRef}
+          type="file"
+          /* @ts-expect-error -- non-standard attrs */
+          webkitdirectory=""
+          directory=""
+          multiple
+          hidden
+          onChange={(e) => {
+            if (e.target.files && e.target.files.length > 0) {
+              importFiles(e.target.files);
+            }
+            e.target.value = '';
+          }}
+        />
       </div>
 
       <BlockTitle>Baumansicht</BlockTitle>

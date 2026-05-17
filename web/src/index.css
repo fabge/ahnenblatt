@@ -5,6 +5,16 @@
 
 /* App-specific overrides Konsta doesn't cover — primarily the tree canvas. */
 
+/* Tailwind preflight removes the default button cursor. Bring it back globally
+   so desktop / iPadOS-with-trackpad users get the affordance. Touch devices
+   ignore cursor styles, so this is a no-op on iOS. */
+button:not(:disabled), [role='button']:not([aria-disabled='true']), a[href] {
+  cursor: pointer;
+}
+button:disabled, [aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
 /* Align iOS section headers with inset list content (matches .insetGrouped). */
 .k-block-title {
   padding-left: calc(env(safe-area-inset-left) + 2rem);
@@ -22,10 +32,10 @@ body {
 
 .tree-canvas {
   position: relative; width: 100%; height: 100%; overflow: hidden;
-  background: #f2f2f7; touch-action: none;
+  background: var(--color-ios-light-surface); touch-action: none;
   user-select: none; -webkit-user-select: none; cursor: grab;
 }
-.dark .tree-canvas { background: #000; }
+.dark .tree-canvas { background: var(--color-ios-dark-surface); }
 .tree-canvas:active { cursor: grabbing; }
 
 .tree-world {

@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import {
   Page,
   Navbar,
@@ -7,9 +8,16 @@ import {
   List,
   ListItem,
   Link,
-  BlockHeader,
 } from 'konsta/react';
-import { Check, SlidersHorizontal, FlipVertical } from 'lucide-react';
+
+function PopoverSectionLabel({ children }: { children: ReactNode }) {
+  return (
+    <div className="px-4 pt-3 pb-1 text-[12px] uppercase tracking-wider text-black/45 dark:text-white/45 font-medium">
+      {children}
+    </div>
+  );
+}
+import { Check, SlidersHorizontal, ArrowUpDown } from 'lucide-react';
 import { useStore } from '../store';
 import type { TreeMode, GenerationsPref } from '../store';
 import { ancestorLayout, descendantLayout, invertLayoutY } from '../layout';
@@ -82,7 +90,19 @@ export function TreeView() {
         onBackdropClick={() => setMenuOpen(false)}
         className="w-64"
       >
-        <BlockHeader>Ansicht</BlockHeader>
+        <List nested>
+          <ListItem
+            link
+            chevron={false}
+            onClick={() => {
+              setInverted((v) => !v);
+              setMenuOpen(false);
+            }}
+            media={<ArrowUpDown size={20} strokeWidth={1.8} />}
+            title="Hierarchie umkehren"
+          />
+        </List>
+        <PopoverSectionLabel>Ansicht</PopoverSectionLabel>
         <List nested>
           {(['Vorfahren', 'Nachfahren'] as TreeMode[]).map((m) => (
             <ListItem
@@ -98,7 +118,7 @@ export function TreeView() {
             />
           ))}
         </List>
-        <BlockHeader>Generationen</BlockHeader>
+        <PopoverSectionLabel>Generationen</PopoverSectionLabel>
         <List nested>
           {GEN_OPTIONS.map((g) => (
             <ListItem
@@ -113,18 +133,6 @@ export function TreeView() {
               after={generations === g ? <Check size={18} strokeWidth={2.5} /> : null}
             />
           ))}
-        </List>
-        <List nested>
-          <ListItem
-            link
-            chevron={false}
-            onClick={() => {
-              setInverted((v) => !v);
-              setMenuOpen(false);
-            }}
-            media={<FlipVertical size={20} strokeWidth={1.8} />}
-            title="Hierarchie umkehren"
-          />
         </List>
       </Popover>
 

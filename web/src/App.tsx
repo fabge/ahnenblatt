@@ -25,7 +25,7 @@ function usePrefersDark() {
 export default function App() {
   const dark = usePrefersDark();
   return (
-    <KonstaApp theme="ios" safeAreas dark={dark}>
+    <KonstaApp theme="ios" safeAreas dark={dark} iosHoverHighlight={false}>
       <StoreProvider>
         <Shell />
       </StoreProvider>
