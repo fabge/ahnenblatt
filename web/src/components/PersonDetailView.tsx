@@ -3,13 +3,13 @@ import {
   Popup,
   Page,
   Navbar,
-  NavbarBackLink,
   Block,
   BlockTitle,
   List,
   ListItem,
   Link,
 } from 'konsta/react';
+import { X } from 'lucide-react';
 import { useStore } from '../store';
 import { fullName, shortLife } from '../types';
 import type { Person } from '../types';
@@ -79,7 +79,11 @@ export function PersonDetailView({
       <Page>
         <Navbar
           title={fullName(person)}
-          left={<NavbarBackLink text="Schließen" onClick={close} />}
+          left={
+            <Link onClick={close} aria-label="Schließen" iconOnly>
+              <X size={22} strokeWidth={2.2} />
+            </Link>
+          }
           right={
             <Link
               onClick={() => {

@@ -23,14 +23,20 @@ export function PeopleListView() {
   }, [persons, query]);
 
   return (
-    <Page>
-      <Navbar title="Personen" large transparent />
-      <Searchbar
-        value={query}
-        onInput={(e: React.FormEvent<HTMLInputElement>) => setQuery(e.currentTarget.value)}
-        onClear={() => setQuery('')}
-        disableButton={false}
-        placeholder="Suchen…"
+    <Page className="pb-[calc(env(safe-area-inset-bottom)+96px)]">
+      <Navbar
+        title="Personen"
+        large
+        transparent
+        subnavbar={
+          <Searchbar
+            value={query}
+            onInput={(e: React.FormEvent<HTMLInputElement>) => setQuery(e.currentTarget.value)}
+            onClear={() => setQuery('')}
+            disableButton
+            placeholder="Suchen…"
+          />
+        }
       />
       <BlockTitle>{filtered.length} Personen</BlockTitle>
       <List strongIos insetIos>

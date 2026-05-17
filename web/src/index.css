@@ -5,6 +5,11 @@
 
 /* App-specific overrides Konsta doesn't cover — primarily the tree canvas. */
 
+/* Align iOS section headers with inset list content (matches .insetGrouped). */
+.k-block-title {
+  padding-left: calc(env(safe-area-inset-left) + 2rem);
+}
+
 html, body, #root { height: 100%; margin: 0; }
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display',

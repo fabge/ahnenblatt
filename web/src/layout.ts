@@ -17,6 +17,16 @@ export interface TreeLayout {
   height: number;
 }
 
+export function invertLayoutY(layout: TreeLayout): TreeLayout {
+  const h = layout.height;
+  return {
+    width: layout.width,
+    height: layout.height,
+    nodes: layout.nodes.map((n) => ({ ...n, y: h - n.y })),
+    links: layout.links.map((l) => ({ x1: l.x1, y1: h - l.y1, x2: l.x2, y2: h - l.y2 })),
+  };
+}
+
 export const CARD_W = 150;
 export const CARD_H = 90;
 const HG = 18;

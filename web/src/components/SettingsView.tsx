@@ -1,60 +1,36 @@
-import { useState } from 'react';
-import {
-  Page,
-  Navbar,
-  BlockTitle,
-  List,
-  ListItem,
-  Block,
-  Button,
-  Dialog,
-  DialogButton,
-} from 'konsta/react';
+import { Page, Navbar, BlockTitle, List, ListItem } from 'konsta/react';
+import { FolderMinus } from 'lucide-react';
 import { useStore } from '../store';
 
+const APP_VERSION = '1.0';
+const GEDCOM_FORMAT = 'GEDCOM 5.5.1';
+
 export function SettingsView() {
-  const { folderName, persons, reset } = useStore();
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  const { folderName, persons, families, reset } = useStore();
 
   return (
-    <Page>
+    <Page className="pb-[calc(env(safe-area-inset-bottom)+96px)]">
       <Navbar title="Einstellungen" large transparent />
-      <BlockTitle>Ordner</BlockTitle>
+      <BlockTitle>Stammbaum</BlockTitle>
       <List strongIos insetIos>
-        <ListItem title="Name" after={folderName || '–'} />
+        <ListItem title="Ordner" after={folderName || '–'} />
         <ListItem title="Personen" after={String(Object.keys(persons).length)} />
+        <ListItem title="Familien" after={String(Object.keys(families).length)} />
       </List>
-      <Block inset>
-        <Button
-          large
-          rounded
-          colors={{ fillBgIos: 'bg-red-500', fillBgMaterial: 'bg-red-500' }}
-          onClick={() => setConfirmOpen(true)}
-        >
-          Anderen Ordner laden
-        </Button>
-      </Block>
-
-      <Dialog
-        opened={confirmOpen}
-        onBackdropClick={() => setConfirmOpen(false)}
-        title="Daten löschen?"
-        content="Alle importierten Personen und Fotos werden entfernt, und du wählst anschließend einen neuen Ordner."
-        buttons={
-          <>
-            <DialogButton onClick={() => setConfirmOpen(false)}>Abbrechen</DialogButton>
-            <DialogButton
-              strong
-              onClick={() => {
-                setConfirmOpen(false);
-                reset();
-              }}
-            >
-              Löschen
-            </DialogButton>
-          </>
-        }
-      />
+      <List strongIos insetIos>
+        <ListItem
+          link
+          chevron={false}
+          onClick={() => reset()}
+          media={<FolderMinus size={26} strokeWidth={1.8} className="text-blue-500" />}
+          title={<span className="text-red-500">Anderen Ordner wählen</span>}
+        />
+      </List>
+      <BlockTitle>Info</BlockTitle>
+      <List strongIos insetIos>
+        <ListItem title="Version" after={APP_VERSION} />
+        <ListItem title="Format" after={GEDCOM_FORMAT} />
+      </List>
     </Page>
   );
 }
