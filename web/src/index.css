@@ -1,23 +1,96 @@
 @import 'tailwindcss';
-@import 'konsta/react/theme.css';
+@import 'framework7/css/bundle';
 
-@custom-variant dark (&:where(.dark, .dark *));
+/* Framework7 toggles .dark-mode on <html>; map Tailwind's dark variant to it. */
+@custom-variant dark (&:where(.dark-mode, .dark-mode *));
 
-/* App-specific overrides Konsta doesn't cover — primarily the tree canvas. */
+/* ─── App-specific overrides ─── */
 
-/* Tailwind preflight removes the default button cursor. Bring it back globally
-   so desktop / iPadOS-with-trackpad users get the affordance. Touch devices
-   ignore cursor styles, so this is a no-op on iOS. */
-button:not(:disabled), [role='button']:not([aria-disabled='true']), a[href] {
-  cursor: pointer;
+/* Brown accent for the active row in the iPad Stammbaum sidebar.
+   Highlight covers the entire row (avatar + text), text vertically centered. */
+.sidebar-row-active .item-link,
+.sidebar-row-active .item-content {
+  background: #8b6a45;
+  color: #fff;
 }
-button:disabled, [aria-disabled='true'] {
-  cursor: not-allowed;
+.sidebar-row-active .item-after,
+.sidebar-row-active .item-subtitle,
+.sidebar-row-active .item-text { color: rgba(255, 255, 255, 0.8); }
+.sidebar-row-active .item-content::before,
+.sidebar-row-active .item-content::after { display: none !important; }
+
+/* Personen-list rows (sidebar + Personen master): vertically center the
+   avatar with the text instead of F7's default top alignment. */
+.media-list .item-content,
+.media-list .item-link .item-content {
+  align-items: center;
+}
+.media-list .item-media { align-self: center; }
+
+/* Brown accent button for "Ordner wechseln" in Settings. */
+.folder-change-btn.button-fill {
+  background: #8b6a45;
+  color: #fff;
+}
+.folder-change-btn.button-fill:hover { background: #7a5c3c; }
+
+/* ─── Floating-pill tabbar (overrides F7's full-width bottom toolbar) ─── */
+
+.tabbar.toolbar-bottom {
+  background: transparent !important;
+  box-shadow: none !important;
+  pointer-events: none;
+}
+.tabbar.toolbar-bottom::before,
+.tabbar.toolbar-bottom::after { display: none !important; }
+
+.tabbar.toolbar-bottom .toolbar-inner {
+  pointer-events: auto;
+  position: absolute;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom) + 6px);
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100% - 16px);
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.18);
+  padding: 6px;
+  gap: 4px;
+  height: auto;
+  align-items: center;
+  justify-content: center;
+}
+.dark-mode .tabbar.toolbar-bottom .toolbar-inner {
+  background: rgba(28, 28, 30, 0.85);
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.5);
+  outline: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* Align iOS section headers with inset list content (matches .insetGrouped). */
-.k-block-title {
-  padding-left: calc(env(safe-area-inset-left) + 2rem);
+.tabbar.toolbar-bottom .link {
+  flex: 0 0 auto;
+  min-width: 0;
+  height: auto;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: rgba(0, 0, 0, 0.55);
+  background: transparent !important;
+}
+.dark-mode .tabbar.toolbar-bottom .link { color: rgba(255, 255, 255, 0.55); }
+.tabbar.toolbar-bottom .link.tab-link-active {
+  color: var(--f7-theme-color);
+}
+.tabbar.toolbar-bottom .tabbar-label {
+  font-size: 10px;
+  line-height: 1;
+  margin-top: 2px;
+  font-weight: 500;
 }
 
 html, body, #root { height: 100%; margin: 0; }
@@ -32,10 +105,10 @@ body {
 
 .tree-canvas {
   position: relative; width: 100%; height: 100%; overflow: hidden;
-  background: var(--color-ios-light-surface); touch-action: none;
+  background: var(--f7-page-bg-color);
+  touch-action: none;
   user-select: none; -webkit-user-select: none; cursor: grab;
 }
-.dark .tree-canvas { background: var(--color-ios-dark-surface); }
 .tree-canvas:active { cursor: grabbing; }
 
 .tree-world {
@@ -47,23 +120,22 @@ body {
 .tree-links line {
   stroke: rgba(60, 60, 67, 0.36); stroke-width: 1.5; fill: none;
 }
-.dark .tree-links line { stroke: rgba(235, 235, 245, 0.3); }
+.dark-mode .tree-links line { stroke: rgba(235, 235, 245, 0.3); }
 
 .tree-card {
   position: absolute; padding: 6px;
-  background: #fff; border: 1px solid rgba(60, 60, 67, 0.18);
+  background: var(--f7-list-bg-color, #fff);
+  border: 1px solid rgba(60, 60, 67, 0.18);
   border-radius: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   display: flex; align-items: center; gap: 8px;
-  cursor: pointer; text-align: left; color: #000;
+  cursor: pointer; text-align: left;
+  color: var(--f7-text-color);
 }
-.dark .tree-card {
-  background: #1c1c1e; border-color: rgba(255, 255, 255, 0.12);
-  color: #fff;
-}
+.dark-mode .tree-card { border-color: rgba(255, 255, 255, 0.12); }
 .tree-card-photo {
   width: 60px; height: 60px; border-radius: 50%;
   overflow: hidden; flex-shrink: 0;
-  background: #007aff; color: #fff;
+  background: var(--f7-theme-color); color: #fff;
   display: flex; align-items: center; justify-content: center; font-weight: 600;
 }
 .tree-card-photo img { width: 100%; height: 100%; object-fit: cover; }
@@ -75,8 +147,8 @@ body {
   overflow: hidden; word-break: break-word;
 }
 .tree-card-sub {
-  color: rgba(60, 60, 67, 0.6); font-size: 11px; line-height: 1.2;
+  color: var(--f7-text-color-secondary, rgba(60, 60, 67, 0.6));
+  font-size: 11px; line-height: 1.2;
   margin-top: 2px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.dark .tree-card-sub { color: rgba(235, 235, 245, 0.6); }

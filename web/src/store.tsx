@@ -58,13 +58,11 @@ interface StoreState {
   families: Record<string, Family>;
   folderName: string;
   rootPersonId: string | null;
-  selectedTab: number;
   canvasByMode: Record<string, CanvasState>;
   prefs: Prefs;
 }
 
 interface StoreApi extends StoreState {
-  setSelectedTab: (n: number) => void;
   importFiles: (files: FileList) => Promise<void>;
   reset: () => Promise<void>;
   getPhotoUrl: (photoPath: string) => Promise<string | null>;
@@ -85,7 +83,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     families: {},
     folderName: '',
     rootPersonId: null,
-    selectedTab: 0,
     canvasByMode: {},
     prefs: loadPrefs(),
   });
@@ -107,10 +104,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }));
       }
     })();
-  }, []);
-
-  const setSelectedTab = useCallback((n: number) => {
-    setState((s) => ({ ...s, selectedTab: n }));
   }, []);
 
   const importFiles = useCallback(async (files: FileList) => {
@@ -170,7 +163,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       families: {},
       folderName: '',
       rootPersonId: null,
-      selectedTab: 0,
       canvasByMode: {},
       prefs: s.prefs,
     }));
@@ -212,7 +204,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   return (
     <StoreCtx.Provider
-      value={{ ...state, setSelectedTab, importFiles, reset, getPhotoUrl, setRootPerson, getCanvas, setCanvas, setPrefs }}
+      value={{ ...state, importFiles, reset, getPhotoUrl, setRootPerson, getCanvas, setCanvas, setPrefs }}
     >
       {children}
     </StoreCtx.Provider>

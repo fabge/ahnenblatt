@@ -11,8 +11,9 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.0",
+    "framework7": "^9.0.4",
+    "framework7-react": "^9.0.4",
     "idb": "^8.0.3",
-    "konsta": "^5.0.9",
     "lucide-react": "^1.16.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6"

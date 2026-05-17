@@ -1,38 +1,34 @@
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
-  Sheet,
-  Page,
-  Navbar,
-  Block,
-  BlockTitle,
-  List,
-  ListItem,
-  Link,
-} from 'konsta/react';
-import { X, GitBranch } from 'lucide-react';
+  Page, Navbar, NavLeft, NavTitle, NavRight, Link,
+  Block, BlockTitle, List, ListItem, f7,
+} from 'framework7-react';
+import { GitBranch } from 'lucide-react';
 import { useStore } from '../store';
 import { fullName, shortLife } from '../types';
 import type { Person } from '../types';
 import { PersonPhoto } from './PersonPhoto';
 import { PhotoFullscreen } from './PhotoFullscreen';
+import { useMediaQuery } from '../useMediaQuery';
 
-interface ContentProps {
+interface Props {
   personId: string;
-  onSelectRelation: (id: string) => void;
-  leftAction?: ReactNode;
-  onOpenInTree?: () => void;
+  /** Tap handler for relation rows. If omitted, the row pushes /person/:id via Link's href. */
+  onSelectRelation?: (id: string) => void;
+  /** Optional left-slot element (e.g. close button when shown inside a sheet). */
+  navLeft?: ReactNode;
+  /** Whether to show the iOS back link. Defaults to true unless navLeft is provided. */
+  showBackLink?: boolean;
+  /** Called after "Als Wurzel" — e.g. close the containing sheet. */
+  afterOpenInTree?: () => void;
 }
 
-/** The body of a person view — Navbar + photo header + facts + relations.
- *  Reused both inside a Sheet (mobile) and inline as a pane (iPad split). */
 export function PersonDetailContent({
-  personId,
-  onSelectRelation,
-  leftAction,
-  onOpenInTree,
-}: ContentProps) {
-  const { persons, families, setRootPerson, setSelectedTab, getPhotoUrl } = useStore();
+  personId, onSelectRelation, navLeft, showBackLink, afterOpenInTree,
+}: Props) {
+  const { persons, families, setRootPerson, getPhotoUrl } = useStore();
+  const isWide = useMediaQuery('(min-width: 768px)');
   const [photoOpen, setPhotoOpen] = useState(false);
   const [hasPhoto, setHasPhoto] = useState(false);
 
@@ -73,23 +69,28 @@ export function PersonDetailContent({
 
   const handleOpenInTree = () => {
     setRootPerson(personId);
-    setSelectedTab(0);
-    onOpenInTree?.();
+    f7.tab.show('#view-tree');
+    afterOpenInTree?.();
   };
+
+  // Mobile routed pages need a back link; iPad master-detail and sheets don't.
+  const useBack = showBackLink ?? (!navLeft && !isWide);
 
   return (
     <Page>
-      <Navbar
-        title={fullName(person)}
-        left={leftAction}
-        right={
-          <Link onClick={handleOpenInTree} aria-label="Als Wurzel" iconOnly>
+      <Navbar>
+        <NavLeft>
+          {navLeft ?? (useBack ? <Link back>Zurück</Link> : null)}
+        </NavLeft>
+        <NavTitle>{fullName(person)}</NavTitle>
+        <NavRight>
+          <Link onClick={handleOpenInTree} iconOnly aria-label="Als Wurzel">
             <GitBranch size={22} strokeWidth={1.8} />
           </Link>
-        }
-      />
+        </NavRight>
+      </Navbar>
 
-      <Block strong inset className="flex flex-col items-center text-center pt-6">
+      <Block strong inset className="flex flex-col items-center text-center !pt-6">
         <PersonPhoto
           person={person}
           size={120}
@@ -101,22 +102,10 @@ export function PersonDetailContent({
         )}
       </Block>
 
-      <FactsSection
-        title="Geburt"
-        rows={[['Datum', person.birthDate], ['Ort', person.birthPlace]]}
-      />
-      <FactsSection
-        title="Tod"
-        rows={[['Datum', person.deathDate], ['Ort', person.deathPlace]]}
-      />
-      <FactsSection
-        title="Bestattung"
-        rows={[['Datum', person.burialDate], ['Ort', person.burialPlace]]}
-      />
-      <FactsSection
-        title="Weitere"
-        rows={[['Beruf', person.occupation], ['Religion', person.religion]]}
-      />
+      <FactsSection title="Geburt" rows={[['Datum', person.birthDate], ['Ort', person.birthPlace]]} />
+      <FactsSection title="Tod" rows={[['Datum', person.deathDate], ['Ort', person.deathPlace]]} />
+      <FactsSection title="Bestattung" rows={[['Datum', person.burialDate], ['Ort', person.burialPlace]]} />
+      <FactsSection title="Weitere" rows={[['Beruf', person.occupation], ['Religion', person.religion]]} />
 
       {person.notes && (
         <>
@@ -144,92 +133,38 @@ export function PersonDetailContent({
   );
 }
 
-/** Mobile / TreeView entry point: presents the content as an iOS-style sheet. */
-export function PersonDetailView({
-  personId,
-  onClose,
-}: {
-  personId: string;
-  onClose: () => void;
-}) {
-  const [opened, setOpened] = useState(true);
-  const [drilldown, setDrilldown] = useState<string | null>(null);
-
-  const close = () => setOpened(false);
-
-  return (
-    <Sheet
-      opened={opened}
-      onBackdropClick={close}
-      className="
-        h-[calc(100%-env(safe-area-inset-top)-12px)]
-        shadow-[0_-8px_30px_-12px_rgba(0,0,0,0.25)]
-      "
-      onTransitionEnd={(e: React.TransitionEvent<HTMLElement>) => {
-        if (!opened && e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div
-        aria-hidden
-        className="absolute top-1.5 left-1/2 -translate-x-1/2 w-9 h-1 rounded-full bg-black/20 dark:bg-white/25 z-10 pointer-events-none"
-      />
-      <PersonDetailContent
-        personId={personId}
-        onSelectRelation={setDrilldown}
-        leftAction={
-          <Link onClick={close} aria-label="Schließen" iconOnly>
-            <X size={22} strokeWidth={2.2} />
-          </Link>
-        }
-        onOpenInTree={close}
-      />
-
-      {drilldown && (
-        <PersonDetailView personId={drilldown} onClose={() => setDrilldown(null)} />
-      )}
-    </Sheet>
-  );
-}
-
 function FactsSection({ title, rows }: { title: string; rows: [string, string][] }) {
   const visible = rows.filter(([, v]) => v && v.trim());
   if (visible.length === 0) return null;
   return (
     <>
       <BlockTitle>{title}</BlockTitle>
-      <List strongIos insetIos>
-        {visible.map(([k, v]) => (
-          <ListItem key={k} title={k} after={v} />
-        ))}
+      <List strong inset>
+        {visible.map(([k, v]) => <ListItem key={k} title={k} after={v} />)}
       </List>
     </>
   );
 }
 
 function PeopleSection({
-  title,
-  people,
-  onTap,
-}: {
-  title: string;
-  people: Person[];
-  onTap: (id: string) => void;
-}) {
+  title, people, onTap,
+}: { title: string; people: Person[]; onTap?: (id: string) => void }) {
   if (people.length === 0) return null;
   return (
     <>
       <BlockTitle>{title}</BlockTitle>
-      <List strongIos insetIos>
+      <List strong inset mediaList>
         {people.map((p) => (
           <ListItem
             key={p.id}
-            link
-            chevron
-            onClick={() => onTap(p.id)}
+            link={onTap ? '#' : `/person/${p.id}/`}
+            reloadDetail={!onTap}
+            onClick={onTap ? (e: React.MouseEvent) => { e.preventDefault(); onTap(p.id); } : undefined}
             title={fullName(p)}
             after={shortLife(p)}
-            media={<PersonPhoto person={p} size={36} />}
-          />
+          >
+            <PersonPhoto slot="media" person={p} size={36} />
+          </ListItem>
         ))}
       </List>
     </>

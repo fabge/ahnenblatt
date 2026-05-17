@@ -1,13 +1,7 @@
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import {
-  Page,
-  Navbar,
-  BlockTitle,
-  List,
-  ListItem,
-  Toggle,
-  Popover,
-} from 'konsta/react';
+  Page, Navbar, NavTitle, BlockTitle, Block, List, ListItem, Toggle, Popover, Button,
+} from 'framework7-react';
 import { Folder, Layers, ChevronsDown, FileText, Check } from 'lucide-react';
 import { useStore } from '../store';
 import type { TreeMode, GenerationsPref } from '../store';
@@ -20,134 +14,116 @@ const genLabel = (g: GenerationsPref) => (g === 'all' ? 'Alle' : String(g));
 
 export function SettingsView() {
   const { folderName, persons, families, prefs, setPrefs, importFiles } = useStore();
-
-  const modeRowRef = useRef<HTMLLIElement>(null);
-  const genRowRef = useRef<HTMLLIElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-  const [modeOpen, setModeOpen] = useState(false);
-  const [genOpen, setGenOpen] = useState(false);
 
   return (
-    <Page className="pb-[calc(env(safe-area-inset-bottom)+96px)]">
-      <Navbar title="Einstellungen" large transparent />
+    <Page name="settings">
+      <Navbar>
+        <NavTitle>Einstellungen</NavTitle>
+      </Navbar>
 
-      <div className="mx-4 mt-2 rounded-2xl bg-white dark:bg-zinc-900 px-4 py-3 flex items-center gap-3">
-        <div className="w-12 h-12 rounded-xl bg-[#f4ede2] dark:bg-zinc-800 flex items-center justify-center shrink-0">
-          <Folder size={24} strokeWidth={1.8} className="text-[#8b6a45]" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="text-[11px] uppercase tracking-wider text-black/45 dark:text-white/45 font-medium">
-            Geöffneter Ordner
-          </div>
-          <div className="text-[15px] font-semibold truncate">{folderName || '–'}</div>
-          <div className="text-[13px] text-black/55 dark:text-white/55">
-            {Object.keys(persons).length} Personen · {Object.keys(families).length} Familien
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={() => fileRef.current?.click()}
-          className="shrink-0 px-3 h-8 rounded-full bg-black/5 dark:bg-white/10 text-[14px] font-medium text-[#8b6a45] active:opacity-60"
+      <BlockTitle>Geöffneter Ordner</BlockTitle>
+      <List strong inset mediaList>
+        <ListItem
+          title={folderName || '–'}
+          text={`${Object.keys(persons).length} Personen · ${Object.keys(families).length} Familien`}
         >
-          Wechseln
-        </button>
-        <input
-          ref={fileRef}
-          type="file"
-          /* @ts-expect-error -- non-standard attrs */
-          webkitdirectory=""
-          directory=""
-          multiple
-          hidden
-          onChange={(e) => {
-            if (e.target.files && e.target.files.length > 0) {
-              importFiles(e.target.files);
-            }
-            e.target.value = '';
-          }}
-        />
-      </div>
+          <FolderBadge slot="media" />
+          <Button
+            slot="after"
+            small
+            round
+            fill
+            className="folder-change-btn"
+            onClick={() => fileRef.current?.click()}
+          >
+            Wechseln
+          </Button>
+        </ListItem>
+      </List>
+      <input
+        ref={fileRef}
+        type="file"
+        /* @ts-expect-error -- non-standard attrs */
+        webkitdirectory=""
+        directory=""
+        multiple
+        hidden
+        onChange={(e) => {
+          if (e.target.files && e.target.files.length > 0) importFiles(e.target.files);
+          e.target.value = '';
+        }}
+      />
+      {!folderName && (
+        <Block className="!mt-0 text-[13px] opacity-55">
+          Kein Ordner geöffnet.
+        </Block>
+      )}
 
       <BlockTitle>Baumansicht</BlockTitle>
-      <List strongIos insetIos>
+      <List strong inset>
         <ListItem
-          ref={modeRowRef}
-          link
-          chevron
-          onClick={() => setModeOpen(true)}
-          media={<IconBadge color="bg-emerald-500"><Layers size={18} strokeWidth={2} /></IconBadge>}
+          link="#"
+          popoverOpen=".popover-mode"
           title="Standardmodus"
           after={prefs.defaultMode}
-        />
+        >
+          <IconBadge slot="media" color="bg-emerald-500"><Layers size={18} strokeWidth={2} /></IconBadge>
+        </ListItem>
         <ListItem
-          ref={genRowRef}
-          link
-          chevron
-          onClick={() => setGenOpen(true)}
-          media={<IconBadge color="bg-blue-500"><ChevronsDown size={18} strokeWidth={2} /></IconBadge>}
+          link="#"
+          popoverOpen=".popover-gens"
           title="Generationen"
           after={genLabel(prefs.defaultGenerations)}
-        />
-        <ListItem
-          media={<IconBadge color="bg-amber-500"><FileText size={18} strokeWidth={2} /></IconBadge>}
-          title="Lebensdaten anzeigen"
-          after={
-            <Toggle
-              checked={prefs.showLifeData}
-              onChange={() => setPrefs({ showLifeData: !prefs.showLifeData })}
-            />
-          }
-        />
+        >
+          <IconBadge slot="media" color="bg-blue-500"><ChevronsDown size={18} strokeWidth={2} /></IconBadge>
+        </ListItem>
+        <ListItem title="Lebensdaten anzeigen">
+          <IconBadge slot="media" color="bg-amber-500"><FileText size={18} strokeWidth={2} /></IconBadge>
+          <Toggle
+            slot="after"
+            checked={prefs.showLifeData}
+            onChange={() => setPrefs({ showLifeData: !prefs.showLifeData })}
+          />
+        </ListItem>
       </List>
 
       <BlockTitle>Info</BlockTitle>
-      <List strongIos insetIos>
+      <List strong inset>
         <ListItem title="Version" after={APP_VERSION} />
         <ListItem title="Format" after={GEDCOM_FORMAT} />
       </List>
 
-      <Popover
-        opened={modeOpen}
-        target={modeRowRef.current}
-        onBackdropClick={() => setModeOpen(false)}
-        className="w-56"
-      >
-        <List nested>
+      <Popover className="popover-mode">
+        <List>
           {(['Vorfahren', 'Nachfahren'] as TreeMode[]).map((m) => (
             <ListItem
               key={m}
-              link
-              chevron={false}
-              onClick={() => {
-                setPrefs({ defaultMode: m });
-                setModeOpen(false);
-              }}
+              link="#"
+              noChevron
+              popoverClose
+              onClick={() => setPrefs({ defaultMode: m })}
               title={m}
-              after={prefs.defaultMode === m ? <Check size={18} strokeWidth={2.5} /> : null}
-            />
+            >
+              {prefs.defaultMode === m && <Check slot="after" size={18} strokeWidth={2.5} />}
+            </ListItem>
           ))}
         </List>
       </Popover>
 
-      <Popover
-        opened={genOpen}
-        target={genRowRef.current}
-        onBackdropClick={() => setGenOpen(false)}
-        className="w-56"
-      >
-        <List nested>
+      <Popover className="popover-gens">
+        <List>
           {GEN_OPTIONS.map((g) => (
             <ListItem
               key={String(g)}
-              link
-              chevron={false}
-              onClick={() => {
-                setPrefs({ defaultGenerations: g });
-                setGenOpen(false);
-              }}
+              link="#"
+              noChevron
+              popoverClose
+              onClick={() => setPrefs({ defaultGenerations: g })}
               title={genLabel(g)}
-              after={prefs.defaultGenerations === g ? <Check size={18} strokeWidth={2.5} /> : null}
-            />
+            >
+              {prefs.defaultGenerations === g && <Check slot="after" size={18} strokeWidth={2.5} />}
+            </ListItem>
           ))}
         </List>
       </Popover>
@@ -155,10 +131,23 @@ export function SettingsView() {
   );
 }
 
-function IconBadge({ color, children }: { color: string; children: React.ReactNode }) {
+function IconBadge({
+  color, children, slot,
+}: { color: string; children: React.ReactNode; slot?: string }) {
   return (
-    <div className={`w-8 h-8 rounded-lg ${color} text-white flex items-center justify-center`}>
+    <div slot={slot} className={`w-8 h-8 rounded-lg ${color} text-white flex items-center justify-center`}>
       {children}
+    </div>
+  );
+}
+
+function FolderBadge({ slot }: { slot?: string }) {
+  return (
+    <div
+      slot={slot}
+      className="w-11 h-11 rounded-xl bg-[#f4ede2] dark:bg-zinc-800 flex items-center justify-center"
+    >
+      <Folder size={22} strokeWidth={1.8} className="text-[#8b6a45]" />
     </div>
   );
 }

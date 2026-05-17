@@ -1,34 +1,76 @@
-import { useEffect, useState } from 'react';
-import { App as KonstaApp } from 'konsta/react';
+import { App as F7App, View, Views, Toolbar, Link } from 'framework7-react';
+import { GitBranch, Users, Settings as SettingsIcon } from 'lucide-react';
 import { StoreProvider, useStore } from './store';
-import { WelcomeView } from './components/WelcomeView';
-import { MainTabView } from './components/MainTabView';
+import { WelcomePage } from './components/WelcomePage';
+import { TreeView } from './components/TreeView';
+import { SettingsView } from './components/SettingsView';
+import { PeopleListPage } from './components/PeopleListPage';
+import { PersonDetailPage } from './components/PersonDetailPage';
+
+const peopleRoutes = [
+  {
+    path: '/',
+    component: PeopleListPage,
+    master: true,
+    detailRoutes: [
+      { path: '/person/:id', component: PersonDetailPage },
+    ],
+  },
+];
 
 function Shell() {
   const { isLoaded } = useStore();
-  return isLoaded ? <MainTabView /> : <WelcomeView />;
-}
 
-function usePrefersDark() {
-  const [dark, setDark] = useState(
-    () => typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches
+  if (!isLoaded) {
+    return (
+      <View main>
+        <WelcomePage />
+      </View>
+    );
+  }
+
+  return (
+    <Views tabs className="safe-areas">
+      <Toolbar tabbar bottom>
+        <Link tabLink="#view-tree" tabLinkActive>
+          <GitBranch size={22} strokeWidth={1.8} />
+          <span className="tabbar-label">Stammbaum</span>
+        </Link>
+        <Link tabLink="#view-people">
+          <Users size={22} strokeWidth={1.8} />
+          <span className="tabbar-label">Personen</span>
+        </Link>
+        <Link tabLink="#view-settings">
+          <SettingsIcon size={22} strokeWidth={1.8} />
+          <span className="tabbar-label">Einstellungen</span>
+        </Link>
+      </Toolbar>
+
+      <View id="view-tree" tab tabActive>
+        <TreeView />
+      </View>
+
+      <View
+        id="view-people"
+        tab
+        url="/"
+        routes={peopleRoutes}
+        masterDetailBreakpoint={768}
+      />
+
+      <View id="view-settings" tab>
+        <SettingsView />
+      </View>
+    </Views>
   );
-  useEffect(() => {
-    const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    const onChange = (e: MediaQueryListEvent) => setDark(e.matches);
-    mq.addEventListener('change', onChange);
-    return () => mq.removeEventListener('change', onChange);
-  }, []);
-  return dark;
 }
 
 export default function App() {
-  const dark = usePrefersDark();
   return (
-    <KonstaApp theme="ios" safeAreas dark={dark} iosHoverHighlight={false}>
+    <F7App theme="ios" name="Stammbaum" darkMode="auto">
       <StoreProvider>
         <Shell />
       </StoreProvider>
-    </KonstaApp>
+    </F7App>
   );
 }

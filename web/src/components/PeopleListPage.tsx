@@ -1,5 +1,8 @@
 import { useMemo } from 'react';
-import { Searchbar, List, ListGroup, ListItem, BlockTitle } from 'framework7-react';
+import {
+  Page, Navbar, NavTitle, Searchbar,
+  List, ListGroup, ListItem, BlockTitle,
+} from 'framework7-react';
 import { useStore } from '../store';
 import { fullName, shortLife, gedClean } from '../types';
 import type { Person } from '../types';
@@ -21,14 +24,7 @@ function compareForList(a: Person, b: Person): number {
   return fullName(a).localeCompare(fullName(b), 'de');
 }
 
-interface Props {
-  activeId: string | null;
-  onSelect: (id: string) => void;
-}
-
-/** Inline sidebar used in the Stammbaum tab on iPad. Mirrors the Personen
- *  master view exactly — same Searchbar (native F7 filtering), same List. */
-export function PeopleSidebar({ activeId, onSelect }: Props) {
+export function PeopleListPage() {
   const { persons } = useStore();
 
   const groups = useMemo(() => {
@@ -45,39 +41,38 @@ export function PeopleSidebar({ activeId, onSelect }: Props) {
   const total = Object.keys(persons).length;
 
   return (
-    <aside
-      className="w-[340px] shrink-0 border-r border-black/10 dark:border-white/10 overflow-auto"
-      style={{ background: 'var(--f7-page-bg-color)' }}
-    >
+    <Page name="people">
+      <Navbar>
+        <NavTitle>Personen</NavTitle>
+      </Navbar>
+
       <Searchbar
-        searchContainer=".tree-sidebar-list"
+        searchContainer=".people-list"
         searchIn=".item-title, .item-after"
         placeholder="Suchen…"
         disableButton={false}
       />
+
       <BlockTitle>{total} Personen</BlockTitle>
-      <List strong inset mediaList className="tree-sidebar-list">
+
+      <List strong inset mediaList className="people-list">
         {groups.map(([letter, people]) => (
           <ListGroup key={letter}>
             <ListItem title={letter} groupTitle />
-            {people.map((p) => {
-              const active = p.id === activeId;
-              return (
-                <ListItem
-                  key={p.id}
-                  link="#"
-                  onClick={(e: React.MouseEvent) => { e.preventDefault(); onSelect(p.id); }}
-                  title={fullName(p)}
-                  after={shortLife(p)}
-                  className={active ? 'sidebar-row-active' : ''}
-                >
-                  <PersonPhoto slot="media" person={p} size={40} />
-                </ListItem>
-              );
-            })}
+            {people.map((p) => (
+              <ListItem
+                key={p.id}
+                link={`/person/${p.id}/`}
+                reloadDetail
+                title={fullName(p)}
+                after={shortLife(p)}
+              >
+                <PersonPhoto slot="media" person={p} size={44} />
+              </ListItem>
+            ))}
           </ListGroup>
         ))}
       </List>
-    </aside>
+    </Page>
   );
 }
