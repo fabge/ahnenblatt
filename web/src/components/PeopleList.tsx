@@ -58,6 +58,7 @@ export function PeopleList({
         searchIn=".item-title"
         placeholder="Suchen…"
         disableButton={false}
+        backdrop={false}
       />
 
       <BlockTitle>{total} Personen</BlockTitle>

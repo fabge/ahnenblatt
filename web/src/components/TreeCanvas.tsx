@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { CARD_W, CARD_H } from '../layout';
 import type { TreeLayout } from '../layout';
 import { fullName, shortLife, initials } from '../types';
 import type { Person } from '../types';
 import { useStore } from '../store';
+import type { CanvasState } from '../store';
 
 interface Props {
   layout: TreeLayout;
@@ -18,16 +19,25 @@ const MAX_SCALE = 4;
 export function TreeCanvas({ layout, persons, mode, onPersonTap }: Props) {
   const { getCanvas, setCanvas, getPhotoUrl, prefs } = useStore();
   const containerRef = useRef<HTMLDivElement>(null);
+  const worldRef = useRef<HTMLDivElement>(null);
 
-  // View state (canvas viewport): scale and translation in container px.
+  // Settled view state — drives initial render & is persisted to store.
   const [vs, setVs] = useState(() => getCanvas(mode));
-  // Keep ref of latest vs so pointer handlers don't capture stale state.
-  const vsRef = useRef(vs);
+  // Live view state — mutated on every pointer/wheel event without re-rendering.
+  const liveVsRef = useRef<CanvasState>(vs);
+
+  function applyTransform(s: CanvasState) {
+    liveVsRef.current = s;
+    const w = worldRef.current;
+    if (w) w.style.transform = `translate3d(${s.tx}px, ${s.ty}px, 0) scale(${s.scale})`;
+  }
+
+  // Sync live ref + DOM whenever state-driven vs changes (initial, hydration, centering).
   useEffect(() => {
-    vsRef.current = vs;
+    applyTransform(vs);
   }, [vs]);
 
-  // Persist viewport changes to store.
+  // Persist settled viewport.
   useEffect(() => {
     setCanvas(mode, vs);
   }, [vs, mode, setCanvas]);
@@ -41,7 +51,7 @@ export function TreeCanvas({ layout, persons, mode, onPersonTap }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, layout.width, layout.height]);
 
-  // Reset centered flag when layout changes (new root / generations) so re-centering runs.
+  // Reset centered flag when layout changes so re-centering runs.
   const prevLayoutRef = useRef({ width: 0, height: 0 });
   useEffect(() => {
     if (layout.width !== prevLayoutRef.current.width || layout.height !== prevLayoutRef.current.height) {
@@ -67,6 +77,25 @@ export function TreeCanvas({ layout, persons, mode, onPersonTap }: Props) {
     return () => cancelAnimationFrame(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [layout, mode]);
+
+  // Precompute the link path string once per layout (one DOM node instead of N).
+  const linksPath = useMemo(
+    () => layout.links.map((l) => `M${l.x1} ${l.y1}L${l.x2} ${l.y2}`).join(''),
+    [layout.links],
+  );
+
+  // Debounced commit for wheel events (no clean pointerup signal).
+  const wheelCommitRef = useRef<number | null>(null);
+  function scheduleCommit() {
+    if (wheelCommitRef.current != null) window.clearTimeout(wheelCommitRef.current);
+    wheelCommitRef.current = window.setTimeout(() => {
+      wheelCommitRef.current = null;
+      setVs(liveVsRef.current);
+    }, 200);
+  }
+  useEffect(() => () => {
+    if (wheelCommitRef.current != null) window.clearTimeout(wheelCommitRef.current);
+  }, []);
 
   // Pointer / pinch handling
   const pointers = useRef<Map<number, { x: number; y: number }>>(new Map());
@@ -101,21 +130,22 @@ export function TreeCanvas({ layout, persons, mode, onPersonTap }: Props) {
     pannedRef.current = false;
     (e.target as Element).setPointerCapture?.(e.pointerId);
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const cur = liveVsRef.current;
     if (pointers.current.size === 1) {
       gesture.current = {
         mode: 'pan',
-        startTx: vsRef.current.tx,
-        startTy: vsRef.current.ty,
-        startScale: vsRef.current.scale,
+        startTx: cur.tx,
+        startTy: cur.ty,
+        startScale: cur.scale,
         startCenter: { x: e.clientX, y: e.clientY },
         startDist: 0,
       };
     } else if (pointers.current.size === 2) {
       gesture.current = {
         mode: 'pinch',
-        startTx: vsRef.current.tx,
-        startTy: vsRef.current.ty,
-        startScale: vsRef.current.scale,
+        startTx: cur.tx,
+        startTy: cur.ty,
+        startScale: cur.scale,
         startCenter: centerOf(),
         startDist: distOf(),
       };
@@ -130,7 +160,11 @@ export function TreeCanvas({ layout, persons, mode, onPersonTap }: Props) {
       const dx = e.clientX - gesture.current.startCenter.x;
       const dy = e.clientY - gesture.current.startCenter.y;
       if (Math.hypot(dx, dy) > 5) pannedRef.current = true;
-      setVs((s) => ({ ...s, tx: gesture.current.startTx + dx, ty: gesture.current.startTy + dy }));
+      applyTransform({
+        ...liveVsRef.current,
+        tx: gesture.current.startTx + dx,
+        ty: gesture.current.startTy + dy,
+      });
     } else if (gesture.current.mode === 'pinch' && pointers.current.size >= 2) {
       pannedRef.current = true;
       const newCenter = centerOf();
@@ -138,33 +172,33 @@ export function TreeCanvas({ layout, persons, mode, onPersonTap }: Props) {
       if (gesture.current.startDist <= 0) return;
       const ratio = newDist / gesture.current.startDist;
       const newScale = clamp(gesture.current.startScale * ratio, MIN_SCALE, MAX_SCALE);
-      // Keep startCenter point stable in world coords; also translate to follow finger center.
       const rect = containerRef.current?.getBoundingClientRect();
       if (!rect) return;
-      // Convert start center (screen) to world via start scale/tx
       const worldX = (gesture.current.startCenter.x - rect.left - gesture.current.startTx) / gesture.current.startScale;
       const worldY = (gesture.current.startCenter.y - rect.top - gesture.current.startTy) / gesture.current.startScale;
       const tx = newCenter.x - rect.left - worldX * newScale;
       const ty = newCenter.y - rect.top - worldY * newScale;
-      setVs({ scale: newScale, tx, ty, centered: true });
+      applyTransform({ scale: newScale, tx, ty, centered: true });
     }
   }
 
   function onPointerUp(e: React.PointerEvent) {
     pointers.current.delete(e.pointerId);
     if (pointers.current.size === 1) {
-      // Resume single-pointer pan with current finger.
       const remaining = Array.from(pointers.current.values())[0];
+      const cur = liveVsRef.current;
       gesture.current = {
         mode: 'pan',
-        startTx: vsRef.current.tx,
-        startTy: vsRef.current.ty,
-        startScale: vsRef.current.scale,
+        startTx: cur.tx,
+        startTy: cur.ty,
+        startScale: cur.scale,
         startCenter: remaining,
         startDist: 0,
       };
     } else if (pointers.current.size === 0) {
       gesture.current.mode = 'none';
+      // Commit the final viewport to state/store once the gesture ends.
+      setVs(liveVsRef.current);
       window.setTimeout(() => { pannedRef.current = false; }, 0);
     }
   }
@@ -173,15 +207,17 @@ export function TreeCanvas({ layout, persons, mode, onPersonTap }: Props) {
     e.preventDefault();
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return;
+    const cur = liveVsRef.current;
     const factor = Math.exp(-e.deltaY * 0.0015);
-    const newScale = clamp(vsRef.current.scale * factor, MIN_SCALE, MAX_SCALE);
+    const newScale = clamp(cur.scale * factor, MIN_SCALE, MAX_SCALE);
     const px = e.clientX - rect.left;
     const py = e.clientY - rect.top;
-    const worldX = (px - vsRef.current.tx) / vsRef.current.scale;
-    const worldY = (py - vsRef.current.ty) / vsRef.current.scale;
+    const worldX = (px - cur.tx) / cur.scale;
+    const worldY = (py - cur.ty) / cur.scale;
     const tx = px - worldX * newScale;
     const ty = py - worldY * newScale;
-    setVs({ scale: newScale, tx, ty, centered: true });
+    applyTransform({ scale: newScale, tx, ty, centered: true });
+    scheduleCommit();
   }
 
   function onDoubleClick() {
@@ -200,18 +236,16 @@ export function TreeCanvas({ layout, persons, mode, onPersonTap }: Props) {
       onDoubleClick={onDoubleClick}
     >
       <div
+        ref={worldRef}
         className="tree-world"
         style={{
           width: layout.width,
           height: layout.height,
-          transform: `translate3d(${vs.tx}px, ${vs.ty}px, 0) scale(${vs.scale})`,
           transformOrigin: '0 0',
         }}
       >
         <svg width={layout.width} height={layout.height} className="tree-links">
-          {layout.links.map((l, i) => (
-            <line key={i} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} />
-          ))}
+          <path d={linksPath} />
         </svg>
         {layout.nodes.map((n) => {
           const p = persons[n.personId];

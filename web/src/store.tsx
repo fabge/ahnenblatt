@@ -162,6 +162,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     await clearAll();
     setState((s) => ({
       isLoaded: false,
+      isLoading: false,
       isImporting: false,
       importError: null,
       persons: {},
@@ -222,5 +223,3 @@ export function useStore(): StoreApi {
   if (!ctx) throw new Error('useStore outside StoreProvider');
   return ctx;
 }
-
-
