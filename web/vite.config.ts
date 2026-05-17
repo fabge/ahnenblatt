@@ -9,6 +9,9 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      // Temporarily ship a self-unregistering SW so old caches clear on next visit.
+      // See web/TODO.md before re-enabling the real SW.
+      selfDestroying: true,
       includeAssets: ['icons/apple-touch-icon.png'],
       manifest: {
         name: 'Stammbaum',
