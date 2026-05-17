@@ -237,7 +237,7 @@ body {
   color: var(--f7-text-color-secondary, rgba(60, 60, 67, 0.6));
 }
 .tree-header-title {
-  font-size: 22px;
+  font-size: 25px;
   font-weight: 700;
   line-height: 1.2;
   margin-top: 2px;
