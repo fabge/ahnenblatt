@@ -24,7 +24,7 @@ body {
 /* iOS standalone PWAs can miss the bottom safe-area inset entirely. */
 @media (display-mode: standalone) {
   .ios .views.safe-areas {
-    --f7-safe-area-bottom: 16px;
+    --f7-safe-area-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
   }
 }
 
