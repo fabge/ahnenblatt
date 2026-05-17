@@ -1,14 +1,14 @@
 import { useMemo, useState } from 'react';
 import {
-  Page, Navbar, NavLeft, NavTitle, NavRight, Link, Icon,
+  Page, Link, Icon,
   Block, Popover, List, ListItem, Sheet,
 } from 'framework7-react';
 import { useStore } from '../store';
 import type { TreeMode, GenerationsPref } from '../store';
 import { ancestorLayout, descendantLayout, invertLayoutY } from '../layout';
+import { fullName } from '../types';
 import { TreeCanvas } from './TreeCanvas';
 import { PersonDetailContent } from './PersonDetailContent';
-import { useMediaQuery } from '../useMediaQuery';
 
 const GEN_OPTIONS: GenerationsPref[] = [1, 2, 3, 4, 5, 6, 7, 'all'];
 const GEN_LIMIT = 100;
@@ -28,7 +28,8 @@ export function TreePage() {
   const [inverted, setInverted] = useState(false);
   const [sheetPersonId, setSheetPersonId] = useState<string | null>(null);
   const [sheetOpened, setSheetOpened] = useState(false);
-  const isWide = useMediaQuery('(min-width: 768px)');
+
+  const rootPerson = rootPersonId ? persons[rootPersonId] : null;
 
   const layout = useMemo(() => {
     if (!rootPersonId || !persons[rootPersonId]) return null;
@@ -46,21 +47,15 @@ export function TreePage() {
 
   return (
     <Page name="tree">
-      <Navbar>
-        <NavLeft>
-          {!isWide && (
-            <Link href="/" iconOnly aria-label="Personen">
-              <Icon f7="sidebar_left" size={22} />
-            </Link>
-          )}
-        </NavLeft>
-        <NavTitle>Stammbaum</NavTitle>
-        <NavRight>
-          <Link popoverOpen=".popover-tree-options" iconOnly aria-label="Optionen">
-            <Icon f7="slider_horizontal_3" size={22} />
-          </Link>
-        </NavRight>
-      </Navbar>
+      <header className="tree-header">
+        <div className="tree-header-text">
+          <div className="tree-header-label">Stammbaum</div>
+          <div className="tree-header-title">{rootPerson ? fullName(rootPerson) : '—'}</div>
+        </div>
+        <Link popoverOpen=".popover-tree-options" iconOnly aria-label="Optionen" className="tree-header-button">
+          <Icon f7="slider_horizontal_3" size={22} />
+        </Link>
+      </header>
 
       {layout ? (
         <TreeCanvas
@@ -78,7 +73,7 @@ export function TreePage() {
       )}
 
       <Popover className="popover-tree-options">
-        <List>
+        <List dividers>
           <ListItem
             link="#"
             noChevron
@@ -90,7 +85,7 @@ export function TreePage() {
           </ListItem>
         </List>
         <PopoverSectionLabel>Ansicht</PopoverSectionLabel>
-        <List>
+        <List dividers>
           {(['Vorfahren', 'Nachfahren'] as TreeMode[]).map((m) => (
             <ListItem
               key={m}
@@ -105,7 +100,7 @@ export function TreePage() {
           ))}
         </List>
         <PopoverSectionLabel>Generationen</PopoverSectionLabel>
-        <List>
+        <List dividers>
           {GEN_OPTIONS.map((g) => (
             <ListItem
               key={String(g)}

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { ReactNode } from 'react';
 import {
-  Page, Navbar, NavTitle, Searchbar, BlockTitle,
+  Page, Navbar, NavTitle, NavTitleLarge, Searchbar, BlockTitle,
   List, ListGroup, ListItem,
 } from 'framework7-react';
 import { useStore } from '../store';
@@ -47,9 +47,10 @@ export function PeopleList({
 
   return (
     <Page name={pageName}>
-      <Navbar>
+      <Navbar large>
         {navLeft}
         <NavTitle>{title}</NavTitle>
+        <NavTitleLarge>{title}</NavTitleLarge>
       </Navbar>
 
       <Searchbar
@@ -61,7 +62,7 @@ export function PeopleList({
 
       <BlockTitle>{total} Personen</BlockTitle>
 
-      <List strong mediaList className={listClass}>
+      <List strong mediaList dividers className={listClass}>
         {groups.map(([letter, people]) => (
           <ListGroup key={letter}>
             <ListItem title={letter} groupTitle />
@@ -75,7 +76,7 @@ export function PeopleList({
                   onSelect(p);
                 } : undefined}
                 title={fullName(p)}
-                className={p.id === activeId ? 'people-list-active' : ''}
+                selected={p.id === activeId}
               >
                 <PersonPhoto slot="media" person={p} size={40} />
               </ListItem>

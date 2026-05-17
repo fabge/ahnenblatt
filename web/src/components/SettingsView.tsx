@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import {
-  Page, Navbar, NavTitle, BlockTitle, Block, List, ListItem, Toggle, Popover, Button, Icon,
+  Page, Navbar, NavTitle, NavTitleLarge, BlockTitle, Block, List, ListItem, Toggle, Button, Icon,
 } from 'framework7-react';
 import { useStore } from '../store';
 import type { TreeMode, GenerationsPref } from '../store';
@@ -17,12 +17,13 @@ export function SettingsView() {
 
   return (
     <Page name="settings">
-      <Navbar>
+      <Navbar large>
         <NavTitle>Einstellungen</NavTitle>
+        <NavTitleLarge>Einstellungen</NavTitleLarge>
       </Navbar>
 
       <BlockTitle>Geöffneter Ordner</BlockTitle>
-      <List strong inset mediaList>
+      <List strong inset mediaList dividers>
         <ListItem
           title={folderName || '–'}
           text={`${Object.keys(persons).length} Personen · ${Object.keys(families).length} Familien`}
@@ -53,22 +54,41 @@ export function SettingsView() {
       )}
 
       <BlockTitle>Baumansicht</BlockTitle>
-      <List strong inset>
+      <List strong inset dividers>
         <ListItem
-          link="#"
-          popoverOpen=".popover-mode"
           title="Standardmodus"
-          after={prefs.defaultMode}
+          smartSelect
+          smartSelectParams={{ openIn: 'popover', closeOnSelect: true }}
         >
           <Icon slot="media" f7="square_stack_fill" size={22} />
+          <select
+            name="defaultMode"
+            value={prefs.defaultMode}
+            onChange={(e) => setPrefs({ defaultMode: e.target.value as TreeMode })}
+          >
+            {(['Vorfahren', 'Nachfahren'] as TreeMode[]).map((m) => (
+              <option key={m} value={m}>{m}</option>
+            ))}
+          </select>
         </ListItem>
         <ListItem
-          link="#"
-          popoverOpen=".popover-gens"
           title="Generationen"
-          after={genLabel(prefs.defaultGenerations)}
+          smartSelect
+          smartSelectParams={{ openIn: 'popover', closeOnSelect: true }}
         >
           <Icon slot="media" f7="chevron_down" size={22} />
+          <select
+            name="defaultGenerations"
+            value={String(prefs.defaultGenerations)}
+            onChange={(e) => {
+              const v = e.target.value;
+              setPrefs({ defaultGenerations: v === 'all' ? 'all' : Number(v) });
+            }}
+          >
+            {GEN_OPTIONS.map((g) => (
+              <option key={String(g)} value={String(g)}>{genLabel(g)}</option>
+            ))}
+          </select>
         </ListItem>
         <ListItem title="Lebensdaten anzeigen">
           <Icon slot="media" f7="doc_text_fill" size={22} />
@@ -81,44 +101,11 @@ export function SettingsView() {
       </List>
 
       <BlockTitle>Info</BlockTitle>
-      <List strong inset>
+      <List strong inset dividers>
         <ListItem title="Version" after={APP_VERSION} />
         <ListItem title="Format" after={GEDCOM_FORMAT} />
       </List>
 
-      <Popover className="popover-mode">
-        <List>
-          {(['Vorfahren', 'Nachfahren'] as TreeMode[]).map((m) => (
-            <ListItem
-              key={m}
-              link="#"
-              noChevron
-              popoverClose
-              onClick={() => setPrefs({ defaultMode: m })}
-              title={m}
-            >
-              {prefs.defaultMode === m && <Icon slot="after" f7="checkmark" size={18} />}
-            </ListItem>
-          ))}
-        </List>
-      </Popover>
-
-      <Popover className="popover-gens">
-        <List>
-          {GEN_OPTIONS.map((g) => (
-            <ListItem
-              key={String(g)}
-              link="#"
-              noChevron
-              popoverClose
-              onClick={() => setPrefs({ defaultGenerations: g })}
-              title={genLabel(g)}
-            >
-              {prefs.defaultGenerations === g && <Icon slot="after" f7="checkmark" size={18} />}
-            </ListItem>
-          ))}
-        </List>
-      </Popover>
     </Page>
   );
 }

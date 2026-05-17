@@ -53,6 +53,7 @@ function persistPrefs(p: Prefs) {
 
 interface StoreState {
   isLoaded: boolean;
+  isLoading: boolean;
   isImporting: boolean;
   importError: string | null;
   persons: Record<string, Person>;
@@ -78,6 +79,7 @@ const StoreCtx = createContext<StoreApi | null>(null);
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<StoreState>({
     isLoaded: false,
+    isLoading: true,
     isImporting: false,
     importError: null,
     persons: {},
@@ -94,16 +96,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     (async () => {
       const meta = await loadMeta();
-      if (meta) {
-        setState((s) => ({
-          ...s,
+      setState((s) => ({
+        ...s,
+        isLoading: false,
+        ...(meta && {
           isLoaded: true,
           persons: meta.persons,
           families: meta.families,
           folderName: meta.folderName,
           rootPersonId: meta.rootPersonId ?? mostAncestralPerson(meta.persons, meta.families),
-        }));
-      }
+        }),
+      }));
     })();
   }, []);
 
@@ -121,12 +124,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       urlCache.current.clear();
       await clearAll();
 
-      // Store all image-ish files indexed by lowercase basename
+      // Store all image-ish files indexed by relative path for collision safety
       const imgExts = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.bmp'];
       for (const f of all) {
         const lower = f.name.toLowerCase();
         if (imgExts.some((ext) => lower.endsWith(ext))) {
-          await putPhoto(lower, f);
+          const relPath = (f as File & { webkitRelativePath?: string }).webkitRelativePath ?? f.name;
+          await putPhoto(relPath, f);
         }
       }
 

@@ -32,15 +32,23 @@ export function TreeCanvas({ layout, persons, mode, onPersonTap }: Props) {
     setCanvas(mode, vs);
   }, [vs, mode, setCanvas]);
 
-  // When mode changes, hydrate from store.
+  // When mode or layout dimensions change, hydrate from store.
   useEffect(() => {
     const id = requestAnimationFrame(() => {
       setVs(getCanvas(mode));
     });
     return () => cancelAnimationFrame(id);
-    // intentionally only on mode change
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode]);
+  }, [mode, layout.width, layout.height]);
+
+  // Reset centered flag when layout changes (new root / generations) so re-centering runs.
+  const prevLayoutRef = useRef({ width: 0, height: 0 });
+  useEffect(() => {
+    if (layout.width !== prevLayoutRef.current.width || layout.height !== prevLayoutRef.current.height) {
+      prevLayoutRef.current = { width: layout.width, height: layout.height };
+      setVs((s) => ({ ...s, centered: false }));
+    }
+  }, [layout.width, layout.height]);
 
   // Center on first show.
   useEffect(() => {
@@ -73,6 +81,7 @@ export function TreeCanvas({ layout, persons, mode, onPersonTap }: Props) {
     mode: 'none', startTx: 0, startTy: 0, startScale: 1,
     startCenter: { x: 0, y: 0 }, startDist: 0,
   });
+  const pannedRef = useRef(false);
 
   function centerOf(): { x: number; y: number } {
     const pts = Array.from(pointers.current.values());
@@ -89,6 +98,7 @@ export function TreeCanvas({ layout, persons, mode, onPersonTap }: Props) {
   }
 
   function onPointerDown(e: React.PointerEvent) {
+    pannedRef.current = false;
     (e.target as Element).setPointerCapture?.(e.pointerId);
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pointers.current.size === 1) {
@@ -119,8 +129,10 @@ export function TreeCanvas({ layout, persons, mode, onPersonTap }: Props) {
     if (gesture.current.mode === 'pan' && pointers.current.size === 1) {
       const dx = e.clientX - gesture.current.startCenter.x;
       const dy = e.clientY - gesture.current.startCenter.y;
+      if (Math.hypot(dx, dy) > 5) pannedRef.current = true;
       setVs((s) => ({ ...s, tx: gesture.current.startTx + dx, ty: gesture.current.startTy + dy }));
     } else if (gesture.current.mode === 'pinch' && pointers.current.size >= 2) {
+      pannedRef.current = true;
       const newCenter = centerOf();
       const newDist = distOf();
       if (gesture.current.startDist <= 0) return;
@@ -153,6 +165,7 @@ export function TreeCanvas({ layout, persons, mode, onPersonTap }: Props) {
       };
     } else if (pointers.current.size === 0) {
       gesture.current.mode = 'none';
+      window.setTimeout(() => { pannedRef.current = false; }, 0);
     }
   }
 
@@ -209,7 +222,10 @@ export function TreeCanvas({ layout, persons, mode, onPersonTap }: Props) {
               person={p}
               x={n.x}
               y={n.y}
-              onTap={() => onPersonTap(p.id)}
+              onTap={() => {
+                if (pannedRef.current) return;
+                onPersonTap(p.id);
+              }}
               getPhotoUrl={getPhotoUrl}
               showLifeData={prefs.showLifeData}
             />

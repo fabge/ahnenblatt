@@ -114,11 +114,17 @@ export function ancestorLayout(
   };
 }
 
+interface FamilyBranch {
+  spouseId?: string;
+  children: DescNode[];
+  subtreeWidth: number;
+  x: number;
+}
+
 interface DescNode {
   personId: string;
   generation: number;
-  spouseId?: string;
-  children: DescNode[];
+  families: FamilyBranch[];
   subtreeWidth: number;
   x: number;
   y: number;
@@ -133,19 +139,20 @@ export function descendantLayout(
   const visited = new Set<string>();
 
   function build(id: string, gen: number): DescNode {
-    const node: DescNode = { personId: id, generation: gen, children: [], subtreeWidth: 0, x: 0, y: 0 };
+    const node: DescNode = { personId: id, generation: gen, families: [], subtreeWidth: 0, x: 0, y: 0 };
     visited.add(id);
     const p = persons[id];
-    if (!p || gen >= generations) return node;
+    if (!p || gen >= generations - 1) return node;
     for (const fid of p.familiesAsSpouse) {
       const fam = families[fid];
       if (!fam) continue;
       const spouseId = p.id === fam.husbandId ? fam.wifeId : fam.husbandId;
-      if (!node.spouseId && spouseId) node.spouseId = spouseId;
+      const branch: FamilyBranch = { spouseId, children: [], subtreeWidth: 0, x: 0 };
       for (const cid of fam.childrenIds) {
         if (visited.has(cid) || !persons[cid]) continue;
-        node.children.push(build(cid, gen + 1));
+        branch.children.push(build(cid, gen + 1));
       }
+      node.families.push(branch);
     }
     return node;
   }
@@ -154,55 +161,60 @@ export function descendantLayout(
   const coupleWidth = CARD_W * 2 + HG;
 
   function computeWidth(n: DescNode) {
-    if (n.children.length === 0) {
-      n.subtreeWidth = (n.spouseId ? coupleWidth : CARD_W) + HG;
-    } else {
-      n.children.forEach(computeWidth);
-      n.subtreeWidth = n.children.reduce((s, c) => s + c.subtreeWidth, 0);
+    for (const fam of n.families) {
+      fam.children.forEach(computeWidth);
+      const childrenWidth = fam.children.reduce((s, c) => s + c.subtreeWidth, 0);
+      fam.subtreeWidth = Math.max(childrenWidth, fam.spouseId ? coupleWidth : CARD_W) + HG;
     }
+    n.subtreeWidth = n.families.reduce((s, fam) => s + fam.subtreeWidth, 0);
+    if (n.families.length === 0) n.subtreeWidth = CARD_W + HG;
   }
   computeWidth(root);
 
   function assignPositions(n: DescNode, leftEdge: number) {
     n.y = n.generation * (CARD_H + VG) + CARD_H / 2;
-    if (n.children.length === 0) {
-      n.x = leftEdge + (n.spouseId ? coupleWidth : CARD_W) / 2;
-    } else {
-      let cursor = leftEdge;
-      for (const child of n.children) {
+    if (n.families.length === 0) {
+      n.x = leftEdge + CARD_W / 2;
+      return;
+    }
+    let cursor = leftEdge;
+    for (const fam of n.families) {
+      for (const child of fam.children) {
         assignPositions(child, cursor);
         cursor += child.subtreeWidth;
       }
-      const firstX = n.children[0].x;
-      const lastX = n.children[n.children.length - 1].x;
-      n.x = (firstX + lastX) / 2;
     }
+    cursor = leftEdge;
+    for (const fam of n.families) {
+      fam.x = cursor + fam.subtreeWidth / 2;
+      cursor += fam.subtreeWidth;
+    }
+    n.x = leftEdge + n.subtreeWidth / 2;
   }
   assignPositions(root, HG);
 
   const nodes: LayoutNode[] = [];
   const links: LayoutLink[] = [];
   let nextId = 0;
-  const flat: DescNode[] = [];
-  (function flatten(n: DescNode) {
-    flat.push(n);
-    n.children.forEach(flatten);
-  })(root);
 
-  for (const n of flat) {
+  function flatten(n: DescNode) {
     nodes.push({ id: String(nextId++), personId: n.personId, x: n.x, y: n.y });
-    if (n.spouseId && persons[n.spouseId]) {
-      nodes.push({ id: String(nextId++), personId: n.spouseId, x: n.x + CARD_W + HG, y: n.y });
-    }
-    const parentY = n.y + CARD_H / 2;
-    for (const child of n.children) {
-      const childY = child.y - CARD_H / 2;
-      const midY = (parentY + childY) / 2;
-      links.push({ x1: n.x, y1: parentY, x2: n.x, y2: midY });
-      links.push({ x1: n.x, y1: midY, x2: child.x, y2: midY });
-      links.push({ x1: child.x, y1: midY, x2: child.x, y2: childY });
+    for (const fam of n.families) {
+      if (fam.spouseId && persons[fam.spouseId]) {
+        nodes.push({ id: String(nextId++), personId: fam.spouseId, x: fam.x + CARD_W + HG, y: n.y });
+      }
+      const parentY = n.y + CARD_H / 2;
+      for (const child of fam.children) {
+        const childY = child.y - CARD_H / 2;
+        const midY = (parentY + childY) / 2;
+        links.push({ x1: n.x, y1: parentY, x2: n.x, y2: midY });
+        links.push({ x1: n.x, y1: midY, x2: child.x, y2: midY });
+        links.push({ x1: child.x, y1: midY, x2: child.x, y2: childY });
+        flatten(child);
+      }
     }
   }
+  flatten(root);
 
   const maxX = nodes.reduce((m, n) => Math.max(m, n.x), 0);
   const maxY = nodes.reduce((m, n) => Math.max(m, n.y), 0);

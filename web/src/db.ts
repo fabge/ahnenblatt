@@ -51,20 +51,38 @@ export async function clearAll() {
   await d.clear('photos');
 }
 
-export async function putPhoto(key: string, blob: Blob) {
+export async function putPhoto(path: string, blob: Blob) {
   const d = await db();
-  await d.put('photos', blob, key.toLowerCase());
+  const key = path.replace(/\\/g, '/').toLowerCase();
+  await d.put('photos', blob, key);
 }
 
-export async function getPhoto(key: string): Promise<Blob | null> {
+export async function getPhoto(path: string): Promise<Blob | null> {
   const d = await db();
-  return (await d.get('photos', key.toLowerCase())) ?? null;
+  const normalized = path.replace(/\\/g, '/').toLowerCase();
+
+  // Exact match
+  const exact = await d.get('photos', normalized);
+  if (exact) return exact;
+
+  // Basename fallback
+  const basename = normalized.substring(normalized.lastIndexOf('/') + 1);
+  const byBasename = await d.get('photos', basename);
+  if (byBasename) return byBasename;
+
+  // Suffix scan fallback for cross-folder collision safety
+  const keys = await d.getAllKeys('photos');
+  for (const key of keys) {
+    if (typeof key !== 'string') continue;
+    if (normalized.endsWith(key) || key.endsWith(normalized)) {
+      return await d.get('photos', key);
+    }
+  }
+  return null;
 }
 
-/** Resolve a GEDCOM photoPath (may be Windows-absolute) to a stored basename key. */
+/** Resolve a GEDCOM photoPath (may be Windows-absolute) to a lookup key. */
 export function photoKey(photoPath: string): string {
   if (!photoPath) return '';
-  const normalized = photoPath.replace(/\\/g, '/');
-  const basename = normalized.substring(normalized.lastIndexOf('/') + 1);
-  return basename.toLowerCase();
+  return photoPath.replace(/\\/g, '/').toLowerCase();
 }

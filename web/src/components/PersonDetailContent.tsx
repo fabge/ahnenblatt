@@ -144,7 +144,7 @@ function FactsSection({ title, rows }: { title: string; rows: [string, string][]
   return (
     <>
       <BlockTitle>{title}</BlockTitle>
-      <List strong inset>
+      <List strong inset dividers>
         {visible.map(([k, v]) => <ListItem key={k} title={k} after={v} />)}
       </List>
     </>
@@ -158,7 +158,7 @@ function PeopleSection({
   return (
     <>
       <BlockTitle>{title}</BlockTitle>
-      <List strong inset mediaList>
+      <List strong inset mediaList dividers>
         {people.map((p) => (
           <ListItem
             key={p.id}
