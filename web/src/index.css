@@ -21,13 +21,6 @@ body {
   text-size-adjust: 100%;
 }
 
-/* iOS standalone PWAs can miss the bottom safe-area inset entirely. */
-@media (display-mode: standalone) {
-  .ios .views.safe-areas {
-    --f7-safe-area-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
-  }
-}
-
 /* Welcome view: local warm palette, without changing the global app theme yet. */
 .welcome-page {
   --f7-theme-color: #8b6a45;
