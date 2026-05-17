@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import {
-  Page, Navbar, NavTitle, Searchbar,
-  List, ListGroup, ListItem, BlockTitle,
+  Page, Navbar, NavTitle, Searchbar, BlockTitle,
+  List, ListGroup, ListItem,
 } from 'framework7-react';
 import { useStore } from '../store';
 import { fullName } from '../types';
@@ -9,8 +9,12 @@ import type { Person } from '../types';
 import { PersonPhoto } from './PersonPhoto';
 import { sectionKey, compareForList } from '../lib/peopleSort';
 
-export function PeopleListPage() {
-  const { persons } = useStore();
+interface F7Router {
+  navigate: (url: string, opts?: Record<string, unknown>) => void;
+}
+
+export function PeoplePickerPage({ f7router }: { f7router?: F7Router }) {
+  const { persons, rootPersonId, setRootPerson } = useStore();
 
   const groups = useMemo(() => {
     const sorted = Object.values(persons).sort(compareForList);
@@ -25,33 +29,39 @@ export function PeopleListPage() {
 
   const total = Object.keys(persons).length;
 
+  const handleSelect = (id: string) => {
+    setRootPerson(id);
+    f7router?.navigate('/tree/');
+  };
+
   return (
-    <Page name="people">
+    <Page name="people-picker">
       <Navbar>
         <NavTitle>Personen</NavTitle>
       </Navbar>
 
       <Searchbar
-        searchContainer=".people-list"
-        searchIn=".item-title, .item-after"
+        searchContainer=".picker-list"
+        searchIn=".item-title"
         placeholder="Suchen…"
         disableButton={false}
       />
 
       <BlockTitle>{total} Personen</BlockTitle>
 
-      <List strong mediaList className="people-list">
+      <List strong mediaList className="picker-list">
         {groups.map(([letter, people]) => (
           <ListGroup key={letter}>
             <ListItem title={letter} groupTitle />
             {people.map((p) => (
               <ListItem
                 key={p.id}
-                link={`/person/${p.id}/`}
-                reloadDetail
+                link="#"
+                onClick={(e: React.MouseEvent) => { e.preventDefault(); handleSelect(p.id); }}
                 title={fullName(p)}
+                className={p.id === rootPersonId ? 'picker-active' : ''}
               >
-                <PersonPhoto slot="media" person={p} size={44} />
+                <PersonPhoto slot="media" person={p} size={40} />
               </ListItem>
             ))}
           </ListGroup>

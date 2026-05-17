@@ -1,7 +1,6 @@
 import { useRef } from 'react';
 import type { ReactNode } from 'react';
-import { Page, Block } from 'framework7-react';
-import { Folder, FileText, Image as ImageIcon } from 'lucide-react';
+import { Page, Block, Icon } from 'framework7-react';
 import { useStore } from '../store';
 
 export function WelcomePage() {
@@ -29,7 +28,7 @@ export function WelcomePage() {
               Öffne deinen Ahnenblatt-Export. Personen und Fotos werden lokal auf dem Gerät gespeichert.
             </p>
             <PrimaryButton onClick={openPicker} disabled={isImporting} className="mt-6">
-              <Folder size={18} strokeWidth={2} />
+              <Icon f7="folder_fill" size={18} />
               {isImporting ? 'Importiere…' : 'Ordner auswählen'}
             </PrimaryButton>
             <p className="mt-4 text-center text-[13px] text-black/45 dark:text-white/40">
@@ -55,7 +54,7 @@ export function WelcomePage() {
               </p>
               <div className="mt-8">
                 <PrimaryButton onClick={openPicker} disabled={isImporting} className="px-5 w-auto">
-                  <Folder size={18} strokeWidth={2} />
+                  <Icon f7="folder_fill" size={18} />
                   {isImporting ? 'Importiere…' : 'Ordner auswählen'}
                 </PrimaryButton>
               </div>
@@ -64,12 +63,12 @@ export function WelcomePage() {
               )}
               <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-black/45 dark:text-white/40">
                 <span className="inline-flex items-center gap-1.5">
-                  <FileText size={14} strokeWidth={2} />
+                  <Icon f7="doc_text_fill" size={14} />
                   <code>.ged</code>-Datei
                 </span>
                 <span>·</span>
                 <span className="inline-flex items-center gap-1.5">
-                  <ImageIcon size={14} strokeWidth={2} />
+                  <Icon f7="photo_fill" size={14} />
                   Fotos
                 </span>
               </div>
@@ -132,7 +131,7 @@ function SamplePreviewCard() {
   return (
     <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-[0_4px_24px_-8px_rgba(0,0,0,0.12)] p-6">
       <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-black/45 dark:text-white/45 font-semibold">
-        <Folder size={14} strokeWidth={2} />
+        <Icon f7="folder_fill" size={14} />
         Vorschau · Hoffmann_Stammbaum
       </div>
       <ul className="mt-4 divide-y divide-black/5 dark:divide-white/5">

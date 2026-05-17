@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CARD_W, CARD_H } from '../layout';
 import type { TreeLayout } from '../layout';
 import { fullName, shortLife, initials } from '../types';
@@ -23,22 +23,27 @@ export function TreeCanvas({ layout, persons, mode, onPersonTap }: Props) {
   const [vs, setVs] = useState(() => getCanvas(mode));
   // Keep ref of latest vs so pointer handlers don't capture stale state.
   const vsRef = useRef(vs);
-  vsRef.current = vs;
+  useEffect(() => {
+    vsRef.current = vs;
+  }, [vs]);
 
   // Persist viewport changes to store.
   useEffect(() => {
     setCanvas(mode, vs);
   }, [vs, mode, setCanvas]);
 
-  // When mode or layout changes, hydrate from store.
+  // When mode changes, hydrate from store.
   useEffect(() => {
-    setVs(getCanvas(mode));
+    const id = requestAnimationFrame(() => {
+      setVs(getCanvas(mode));
+    });
+    return () => cancelAnimationFrame(id);
     // intentionally only on mode change
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode]);
 
   // Center on first show.
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (vs.centered) return;
     const el = containerRef.current;
     if (!el) return;
@@ -48,7 +53,10 @@ export function TreeCanvas({ layout, persons, mode, onPersonTap }: Props) {
     const scale = Math.min(cw / layout.width, ch / layout.height, 1) * 0.95;
     const tx = (cw - layout.width * scale) / 2;
     const ty = (ch - layout.height * scale) / 2;
-    setVs({ scale, tx, ty, centered: true });
+    const id = requestAnimationFrame(() => {
+      setVs({ scale, tx, ty, centered: true });
+    });
+    return () => cancelAnimationFrame(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [layout, mode]);
 
@@ -197,7 +205,7 @@ export function TreeCanvas({ layout, persons, mode, onPersonTap }: Props) {
           if (!p) return null;
           return (
             <TreeCard
-              key={`${n.personId}-${n.x}-${n.y}`}
+              key={n.id}
               person={p}
               x={n.x}
               y={n.y}
@@ -230,9 +238,7 @@ function TreeCard({
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
     let cancelled = false;
-    if (person.photoPath) {
-      getPhotoUrl(person.photoPath).then((u) => { if (!cancelled) setUrl(u); });
-    } else { setUrl(null); }
+    getPhotoUrl(person.photoPath).then((u) => { if (!cancelled) setUrl(u); });
     return () => { cancelled = true; };
   }, [person.photoPath, getPhotoUrl]);
 

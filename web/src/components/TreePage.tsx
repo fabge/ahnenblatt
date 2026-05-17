@@ -1,14 +1,12 @@
 import { useMemo, useState } from 'react';
 import {
-  Page, Navbar, NavTitle, NavRight, Link,
+  Page, Navbar, NavLeft, NavTitle, NavRight, Link, Icon,
   Block, Popover, List, ListItem, Sheet,
 } from 'framework7-react';
-import { Check, SlidersHorizontal, ArrowUpDown, X } from 'lucide-react';
 import { useStore } from '../store';
 import type { TreeMode, GenerationsPref } from '../store';
 import { ancestorLayout, descendantLayout, invertLayoutY } from '../layout';
 import { TreeCanvas } from './TreeCanvas';
-import { PeopleSidebar } from './PeopleSidebar';
 import { PersonDetailContent } from './PersonDetailContent';
 import { useMediaQuery } from '../useMediaQuery';
 
@@ -23,14 +21,13 @@ function PopoverSectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function TreeView() {
-  const { rootPersonId, persons, families, prefs, setRootPerson } = useStore();
+export function TreePage() {
+  const { rootPersonId, persons, families, prefs } = useStore();
   const [mode, setMode] = useState<TreeMode>(prefs.defaultMode);
   const [generations, setGenerations] = useState<GenerationsPref>(prefs.defaultGenerations);
   const [inverted, setInverted] = useState(false);
   const [sheetPersonId, setSheetPersonId] = useState<string | null>(null);
   const [sheetOpened, setSheetOpened] = useState(false);
-
   const isWide = useMediaQuery('(min-width: 768px)');
 
   const layout = useMemo(() => {
@@ -48,45 +45,37 @@ export function TreeView() {
   };
 
   return (
-    <Page name="tree" pageContent={false}>
+    <Page name="tree">
       <Navbar>
+        <NavLeft>
+          {!isWide && (
+            <Link href="/" iconOnly aria-label="Personen">
+              <Icon f7="sidebar_left" size={22} />
+            </Link>
+          )}
+        </NavLeft>
         <NavTitle>Stammbaum</NavTitle>
         <NavRight>
-          <Link
-            className="tree-options-link"
-            popoverOpen=".popover-tree-options"
-            iconOnly
-            aria-label="Optionen"
-          >
-            <SlidersHorizontal size={22} strokeWidth={2} />
+          <Link popoverOpen=".popover-tree-options" iconOnly aria-label="Optionen">
+            <Icon f7="slider_horizontal_3" size={22} />
           </Link>
         </NavRight>
       </Navbar>
 
-      <div className="page-content !p-0 flex !overflow-hidden">
-        {isWide && (
-          <PeopleSidebar
-            activeId={rootPersonId}
-            onSelect={(id) => setRootPerson(id)}
-          />
-        )}
-        <div className="flex-1 relative">
-          {layout ? (
-            <TreeCanvas
-              layout={layout}
-              persons={persons}
-              mode={mode}
-              onPersonTap={openSheet}
-            />
-          ) : (
-            <Block strong inset className="text-center">
-              <p className="opacity-60 text-sm">
-                Keine Wurzelperson gewählt. Öffne eine Person in der Personenliste und tippe „Als Wurzel".
-              </p>
-            </Block>
-          )}
-        </div>
-      </div>
+      {layout ? (
+        <TreeCanvas
+          layout={layout}
+          persons={persons}
+          mode={mode}
+          onPersonTap={openSheet}
+        />
+      ) : (
+        <Block strong inset className="text-center">
+          <p className="opacity-60 text-sm">
+            Keine Wurzelperson gewählt. Öffne eine Person in der Personenliste und tippe „Als Wurzel".
+          </p>
+        </Block>
+      )}
 
       <Popover className="popover-tree-options">
         <List>
@@ -97,7 +86,7 @@ export function TreeView() {
             onClick={() => setInverted((v) => !v)}
             title="Hierarchie umkehren"
           >
-            <ArrowUpDown slot="media" size={20} strokeWidth={1.8} />
+            <Icon slot="media" f7="arrow_up_arrow_down" size={20} />
           </ListItem>
         </List>
         <PopoverSectionLabel>Ansicht</PopoverSectionLabel>
@@ -111,7 +100,7 @@ export function TreeView() {
               onClick={() => setMode(m)}
               title={m}
             >
-              {mode === m && <Check slot="after" size={18} strokeWidth={2.5} />}
+              {mode === m && <Icon slot="after" f7="checkmark" size={18} />}
             </ListItem>
           ))}
         </List>
@@ -126,7 +115,7 @@ export function TreeView() {
               onClick={() => setGenerations(g)}
               title={g === 'all' ? 'Alle' : String(g)}
             >
-              {generations === g && <Check slot="after" size={18} strokeWidth={2.5} />}
+              {generations === g && <Icon slot="after" f7="checkmark" size={18} />}
             </ListItem>
           ))}
         </List>
@@ -146,8 +135,8 @@ export function TreeView() {
             personId={sheetPersonId}
             onSelectRelation={(id) => setSheetPersonId(id)}
             navLeft={
-              <Link onClick={() => setSheetOpened(false)} iconOnly aria-label="Schließen">
-                <X size={22} strokeWidth={2.2} />
+              <Link sheetClose iconOnly aria-label="Schließen">
+                <Icon f7="multiply" size={22} />
               </Link>
             }
             afterOpenInTree={() => setSheetOpened(false)}

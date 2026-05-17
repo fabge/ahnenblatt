@@ -1,8 +1,7 @@
 import { useRef } from 'react';
 import {
-  Page, Navbar, NavTitle, BlockTitle, Block, List, ListItem, Toggle, Popover, Button,
+  Page, Navbar, NavTitle, BlockTitle, Block, List, ListItem, Toggle, Popover, Button, Icon,
 } from 'framework7-react';
-import { Folder, Layers, ChevronsDown, FileText, Check } from 'lucide-react';
 import { useStore } from '../store';
 import type { TreeMode, GenerationsPref } from '../store';
 
@@ -28,15 +27,8 @@ export function SettingsView() {
           title={folderName || '–'}
           text={`${Object.keys(persons).length} Personen · ${Object.keys(families).length} Familien`}
         >
-          <FolderBadge slot="media" />
-          <Button
-            slot="after"
-            small
-            round
-            fill
-            className="folder-change-btn"
-            onClick={() => fileRef.current?.click()}
-          >
+          <Icon slot="media" f7="folder_fill" size={28} />
+          <Button slot="after" small round fill onClick={() => fileRef.current?.click()}>
             Wechseln
           </Button>
         </ListItem>
@@ -68,7 +60,7 @@ export function SettingsView() {
           title="Standardmodus"
           after={prefs.defaultMode}
         >
-          <IconBadge slot="media" color="bg-emerald-500"><Layers size={18} strokeWidth={2} /></IconBadge>
+          <Icon slot="media" f7="square_stack_fill" size={22} />
         </ListItem>
         <ListItem
           link="#"
@@ -76,10 +68,10 @@ export function SettingsView() {
           title="Generationen"
           after={genLabel(prefs.defaultGenerations)}
         >
-          <IconBadge slot="media" color="bg-blue-500"><ChevronsDown size={18} strokeWidth={2} /></IconBadge>
+          <Icon slot="media" f7="chevron_down" size={22} />
         </ListItem>
         <ListItem title="Lebensdaten anzeigen">
-          <IconBadge slot="media" color="bg-amber-500"><FileText size={18} strokeWidth={2} /></IconBadge>
+          <Icon slot="media" f7="doc_text_fill" size={22} />
           <Toggle
             slot="after"
             checked={prefs.showLifeData}
@@ -105,7 +97,7 @@ export function SettingsView() {
               onClick={() => setPrefs({ defaultMode: m })}
               title={m}
             >
-              {prefs.defaultMode === m && <Check slot="after" size={18} strokeWidth={2.5} />}
+              {prefs.defaultMode === m && <Icon slot="after" f7="checkmark" size={18} />}
             </ListItem>
           ))}
         </List>
@@ -122,32 +114,11 @@ export function SettingsView() {
               onClick={() => setPrefs({ defaultGenerations: g })}
               title={genLabel(g)}
             >
-              {prefs.defaultGenerations === g && <Check slot="after" size={18} strokeWidth={2.5} />}
+              {prefs.defaultGenerations === g && <Icon slot="after" f7="checkmark" size={18} />}
             </ListItem>
           ))}
         </List>
       </Popover>
     </Page>
-  );
-}
-
-function IconBadge({
-  color, children, slot,
-}: { color: string; children: React.ReactNode; slot?: string }) {
-  return (
-    <div slot={slot} className={`w-8 h-8 rounded-lg ${color} text-white flex items-center justify-center`}>
-      {children}
-    </div>
-  );
-}
-
-function FolderBadge({ slot }: { slot?: string }) {
-  return (
-    <div
-      slot={slot}
-      className="w-11 h-11 rounded-xl bg-[#f4ede2] dark:bg-zinc-800 flex items-center justify-center"
-    >
-      <Folder size={22} strokeWidth={1.8} className="text-[#8b6a45]" />
-    </div>
   );
 }

@@ -17,7 +17,6 @@ export function PersonPhoto({ person, size = 48, onClick, className = '', slot }
 
   useEffect(() => {
     let cancelled = false;
-    if (!person.photoPath) { setUrl(null); return; }
     getPhotoUrl(person.photoPath).then((u) => { if (!cancelled) setUrl(u); });
     return () => { cancelled = true; };
   }, [person.photoPath, getPhotoUrl]);

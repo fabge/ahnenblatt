@@ -1,11 +1,22 @@
 import { App as F7App, View, Views, Toolbar, Link } from 'framework7-react';
-import { GitBranch, Users, Settings as SettingsIcon } from 'lucide-react';
 import { StoreProvider, useStore } from './store';
 import { WelcomePage } from './components/WelcomePage';
-import { TreeView } from './components/TreeView';
+import { TreePage } from './components/TreePage';
+import { PeoplePickerPage } from './components/PeoplePickerPage';
 import { SettingsView } from './components/SettingsView';
 import { PeopleListPage } from './components/PeopleListPage';
 import { PersonDetailPage } from './components/PersonDetailPage';
+
+const treeRoutes = [
+  {
+    path: '/',
+    component: PeoplePickerPage,
+    master: true,
+    detailRoutes: [
+      { path: '/tree/', component: TreePage },
+    ],
+  },
+];
 
 const peopleRoutes = [
   {
@@ -31,24 +42,31 @@ function Shell() {
 
   return (
     <Views tabs className="safe-areas">
-      <Toolbar tabbar bottom>
-        <Link tabLink="#view-tree" tabLinkActive>
-          <GitBranch size={22} strokeWidth={1.8} />
-          <span className="tabbar-label">Stammbaum</span>
-        </Link>
-        <Link tabLink="#view-people">
-          <Users size={22} strokeWidth={1.8} />
-          <span className="tabbar-label">Personen</span>
-        </Link>
-        <Link tabLink="#view-settings">
-          <SettingsIcon size={22} strokeWidth={1.8} />
-          <span className="tabbar-label">Einstellungen</span>
-        </Link>
+      <Toolbar tabbar icons bottom>
+        <div className="toolbar-pane">
+          <Link tabLink="#view-tree" tabLinkActive>
+            <i className="icon f7-icons">square_stack_3d_up_fill</i>
+            <span className="tabbar-label">Stammbaum</span>
+          </Link>
+          <Link tabLink="#view-people">
+            <i className="icon f7-icons">person_2_fill</i>
+            <span className="tabbar-label">Personen</span>
+          </Link>
+          <Link tabLink="#view-settings">
+            <i className="icon f7-icons">gear_alt_fill</i>
+            <span className="tabbar-label">Einstellungen</span>
+          </Link>
+        </div>
       </Toolbar>
 
-      <View id="view-tree" tab tabActive>
-        <TreeView />
-      </View>
+      <View
+        id="view-tree"
+        tab
+        tabActive
+        url="/tree/"
+        routes={treeRoutes}
+        masterDetailBreakpoint={768}
+      />
 
       <View
         id="view-people"

@@ -1,6 +1,7 @@
 import type { Person, Family } from './types';
 
 export interface LayoutNode {
+  id: string;
   personId: string;
   x: number;
   y: number;
@@ -40,6 +41,7 @@ export function ancestorLayout(
 ): TreeLayout {
   const nodes: LayoutNode[] = [];
   const links: LayoutLink[] = [];
+  let nextId = 0;
 
   type Item = { id: string; ahnNr: number; gen: number };
   const all: Item[] = [];
@@ -85,7 +87,7 @@ export function ancestorLayout(
     sorted.forEach((it, i) => {
       const x = spacing * (i + 0.5);
       nodePos.set(it.ahnNr, { x, y });
-      nodes.push({ personId: it.id, x, y });
+      nodes.push({ id: String(nextId++), personId: it.id, x, y });
     });
   }
 
@@ -180,6 +182,7 @@ export function descendantLayout(
 
   const nodes: LayoutNode[] = [];
   const links: LayoutLink[] = [];
+  let nextId = 0;
   const flat: DescNode[] = [];
   (function flatten(n: DescNode) {
     flat.push(n);
@@ -187,9 +190,9 @@ export function descendantLayout(
   })(root);
 
   for (const n of flat) {
-    nodes.push({ personId: n.personId, x: n.x, y: n.y });
+    nodes.push({ id: String(nextId++), personId: n.personId, x: n.x, y: n.y });
     if (n.spouseId && persons[n.spouseId]) {
-      nodes.push({ personId: n.spouseId, x: n.x + CARD_W + HG, y: n.y });
+      nodes.push({ id: String(nextId++), personId: n.spouseId, x: n.x + CARD_W + HG, y: n.y });
     }
     const parentY = n.y + CARD_H / 2;
     for (const child of n.children) {

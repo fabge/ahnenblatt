@@ -1,16 +1,19 @@
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
-  Page, Navbar, NavLeft, NavTitle, NavRight, Link,
+  Page, Navbar, NavLeft, NavTitle, NavRight, Link, Icon,
   Block, BlockTitle, List, ListItem, f7,
 } from 'framework7-react';
-import { GitBranch } from 'lucide-react';
 import { useStore } from '../store';
 import { fullName, shortLife } from '../types';
 import type { Person } from '../types';
 import { PersonPhoto } from './PersonPhoto';
 import { PhotoFullscreen } from './PhotoFullscreen';
-import { useMediaQuery } from '../useMediaQuery';
+
+interface F7Router {
+  navigate: (url: string, opts?: Record<string, unknown>) => void;
+  back: (url?: string, opts?: Record<string, unknown>) => void;
+}
 
 interface Props {
   personId: string;
@@ -18,17 +21,16 @@ interface Props {
   onSelectRelation?: (id: string) => void;
   /** Optional left-slot element (e.g. close button when shown inside a sheet). */
   navLeft?: ReactNode;
-  /** Whether to show the iOS back link. Defaults to true unless navLeft is provided. */
-  showBackLink?: boolean;
   /** Called after "Als Wurzel" — e.g. close the containing sheet. */
   afterOpenInTree?: () => void;
+  /** Router from F7 route component, used to close the detail view. */
+  f7router?: F7Router;
 }
 
 export function PersonDetailContent({
-  personId, onSelectRelation, navLeft, showBackLink, afterOpenInTree,
+  personId, onSelectRelation, navLeft, afterOpenInTree, f7router,
 }: Props) {
   const { persons, families, setRootPerson, getPhotoUrl } = useStore();
-  const isWide = useMediaQuery('(min-width: 768px)');
   const [photoOpen, setPhotoOpen] = useState(false);
   const [hasPhoto, setHasPhoto] = useState(false);
 
@@ -36,11 +38,7 @@ export function PersonDetailContent({
 
   useEffect(() => {
     let cancelled = false;
-    if (person?.photoPath) {
-      getPhotoUrl(person.photoPath).then((u) => { if (!cancelled) setHasPhoto(!!u); });
-    } else {
-      setHasPhoto(false);
-    }
+    getPhotoUrl(person?.photoPath ?? '').then((u) => { if (!cancelled) setHasPhoto(!!u); });
     return () => { cancelled = true; };
   }, [person?.photoPath, getPhotoUrl]);
 
@@ -70,22 +68,29 @@ export function PersonDetailContent({
   const handleOpenInTree = () => {
     setRootPerson(personId);
     f7.tab.show('#view-tree');
+    const treeRouter = f7.views.get('#view-tree')?.router;
+    treeRouter?.navigate('/tree/');
     afterOpenInTree?.();
   };
 
-  // Mobile routed pages need a back link; iPad master-detail and sheets don't.
-  const useBack = showBackLink ?? (!navLeft && !isWide);
+  const handleClose = () => {
+    if (f7router) f7router.back('/');
+  };
 
   return (
     <Page>
       <Navbar>
         <NavLeft>
-          {navLeft ?? (useBack ? <Link back>Zurück</Link> : null)}
+          {navLeft ?? (
+            <Link onClick={handleClose} iconOnly aria-label="Schließen">
+              <Icon f7="multiply" size={22} />
+            </Link>
+          )}
         </NavLeft>
         <NavTitle>{fullName(person)}</NavTitle>
         <NavRight>
           <Link onClick={handleOpenInTree} iconOnly aria-label="Als Wurzel">
-            <GitBranch size={22} strokeWidth={1.8} />
+            <Icon f7="square_stack_3d_up_fill" size={22} />
           </Link>
         </NavRight>
       </Navbar>
