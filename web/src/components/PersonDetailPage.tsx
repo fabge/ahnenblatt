@@ -17,5 +17,5 @@ export function PersonDetailPage({ f7route, f7router }: { f7route: F7Route; f7ro
 }
 
 export function PersonDetailEmpty() {
-  return <Page style={{ backgroundColor: '#fff' }} />;
+  return <Page />;
 }
