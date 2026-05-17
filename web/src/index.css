@@ -21,6 +21,13 @@ body {
   text-size-adjust: 100%;
 }
 
+/* iOS standalone PWAs can miss the bottom safe-area inset entirely. */
+@media (display-mode: standalone) {
+  .ios .views.safe-areas {
+    --f7-safe-area-bottom: 16px;
+  }
+}
+
 /* Welcome view: local warm palette, without changing the global app theme yet. */
 .welcome-page {
   --f7-theme-color: #8b6a45;
@@ -187,16 +194,6 @@ body {
 .ios .toolbar.tabbar::before,
 .ios .toolbar.tabbar::after {
   display: none;
-}
-
-/* Push tabbar labels down so they sit closer to the bottom like native iOS. */
-.ios .tabbar-icons .tab-link {
-  justify-content: flex-start;
-  padding-top: 10px;
-}
-.ios .tabbar-icons .tabbar-label {
-  margin-top: auto;
-  margin-bottom: 2px;
 }
 
 /* Match iOS contact-style alphabet dividers in person lists. */
