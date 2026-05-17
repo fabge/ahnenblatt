@@ -4,7 +4,16 @@
 /* Framework7 toggles .dark-mode on <html>; map Tailwind's dark variant to it. */
 @custom-variant dark (&:where(.dark-mode, .dark-mode *));
 
-html, body, #root { height: 100%; margin: 0; }
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  background: #f5f5f4;
+}
+html.dark-mode,
+html.dark-mode body,
+html.dark-mode #root {
+  background: #09090b;
+}
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display',
                'Helvetica Neue', Arial, sans-serif;
@@ -178,6 +187,16 @@ body {
 .ios .toolbar.tabbar::before,
 .ios .toolbar.tabbar::after {
   display: none;
+}
+
+/* Push tabbar labels down so they sit closer to the bottom like native iOS. */
+.ios .tabbar-icons .tab-link {
+  justify-content: flex-start;
+  padding-top: 10px;
+}
+.ios .tabbar-icons .tabbar-label {
+  margin-top: auto;
+  margin-bottom: 2px;
 }
 
 /* Match iOS contact-style alphabet dividers in person lists. */
