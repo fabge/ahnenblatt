@@ -27,8 +27,8 @@ export function invertLayoutY(layout: TreeLayout): TreeLayout {
   };
 }
 
-export const CARD_W = 150;
-export const CARD_H = 90;
+export const CARD_W = 160;
+export const CARD_H = 96;
 const HG = 18;
 const VG = 60;
 

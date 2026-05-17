@@ -2,34 +2,31 @@ import { useMemo, useRef, useState } from 'react';
 import {
   Page,
   Navbar,
-  Segmented,
-  SegmentedButton,
   Block,
   Popover,
   List,
   ListItem,
+  Link,
+  BlockHeader,
 } from 'konsta/react';
 import { Check, SlidersHorizontal, FlipVertical } from 'lucide-react';
 import { useStore } from '../store';
+import type { TreeMode, GenerationsPref } from '../store';
 import { ancestorLayout, descendantLayout, invertLayoutY } from '../layout';
 import { TreeCanvas } from './TreeCanvas';
 import { PersonDetailView } from './PersonDetailView';
-import { fullName } from '../types';
 
-type Mode = 'Vorfahren' | 'Nachfahren';
-type GenerationsValue = number | 'all';
-
-const GEN_OPTIONS: GenerationsValue[] = [1, 2, 3, 4, 5, 6, 7, 'all'];
+const GEN_OPTIONS: GenerationsPref[] = [1, 2, 3, 4, 5, 6, 7, 'all'];
 const GEN_LIMIT = 100;
 
 export function TreeView() {
-  const { rootPersonId, persons, families } = useStore();
-  const [mode, setMode] = useState<Mode>('Vorfahren');
-  const [generations, setGenerations] = useState<GenerationsValue>('all');
+  const { rootPersonId, persons, families, prefs } = useStore();
+  const [mode, setMode] = useState<TreeMode>(prefs.defaultMode);
+  const [generations, setGenerations] = useState<GenerationsPref>(prefs.defaultGenerations);
   const [inverted, setInverted] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const menuTargetRef = useRef<HTMLButtonElement>(null);
+  const menuTargetRef = useRef<HTMLAnchorElement>(null);
 
   const layout = useMemo(() => {
     if (!rootPersonId || !persons[rootPersonId]) return null;
@@ -39,6 +36,17 @@ export function TreeView() {
       : descendantLayout(persons, families, rootPersonId, genLimit);
     return inverted ? invertLayoutY(base) : base;
   }, [persons, families, rootPersonId, mode, generations, inverted]);
+
+  const menuButton = (
+    <Link
+      ref={menuTargetRef}
+      onClick={() => setMenuOpen(true)}
+      aria-label="Optionen"
+      iconOnly
+    >
+      <SlidersHorizontal size={22} strokeWidth={2} />
+    </Link>
+  );
 
   if (!rootPersonId || !persons[rootPersonId]) {
     return (
@@ -54,45 +62,18 @@ export function TreeView() {
     );
   }
 
-  const root = persons[rootPersonId];
-
   return (
     <Page>
-      <Navbar title={fullName(root)} subtitle="Stammbaum" />
-      <Block strong inset className="!my-2">
-        <div className="flex items-center gap-2">
-          <div className="flex-1">
-            <Segmented strong>
-              <SegmentedButton active={mode === 'Vorfahren'} onClick={() => setMode('Vorfahren')}>
-                Vorfahren
-              </SegmentedButton>
-              <SegmentedButton active={mode === 'Nachfahren'} onClick={() => setMode('Nachfahren')}>
-                Nachfahren
-              </SegmentedButton>
-            </Segmented>
-          </div>
-          <button
-            ref={menuTargetRef}
-            type="button"
-            onClick={() => setMenuOpen(true)}
-            className="flex items-center justify-center w-9 h-9 rounded-full text-primary active:opacity-50"
-            aria-label="Optionen"
-          >
-            <SlidersHorizontal size={20} strokeWidth={2} />
-          </button>
-        </div>
-      </Block>
-      <div className="px-4">
-        <div className="rounded-xl overflow-hidden border border-black/10 dark:border-white/10 h-[calc(100dvh-180px)]">
-          {layout && (
-            <TreeCanvas
-              layout={layout}
-              persons={persons}
-              mode={mode}
-              onPersonTap={(id) => setSelectedId(id)}
-            />
-          )}
-        </div>
+      <Navbar title="Stammbaum" large transparent right={menuButton} />
+      <div className="h-[calc(100dvh-140px)]">
+        {layout && (
+          <TreeCanvas
+            layout={layout}
+            persons={persons}
+            mode={mode}
+            onPersonTap={(id) => setSelectedId(id)}
+          />
+        )}
       </div>
 
       <Popover
@@ -101,6 +82,23 @@ export function TreeView() {
         onBackdropClick={() => setMenuOpen(false)}
         className="w-64"
       >
+        <BlockHeader>Ansicht</BlockHeader>
+        <List nested>
+          {(['Vorfahren', 'Nachfahren'] as TreeMode[]).map((m) => (
+            <ListItem
+              key={m}
+              link
+              chevron={false}
+              onClick={() => {
+                setMode(m);
+                setMenuOpen(false);
+              }}
+              title={m}
+              after={mode === m ? <Check size={18} strokeWidth={2.5} /> : null}
+            />
+          ))}
+        </List>
+        <BlockHeader>Generationen</BlockHeader>
         <List nested>
           {GEN_OPTIONS.map((g) => (
             <ListItem
@@ -111,10 +109,12 @@ export function TreeView() {
                 setGenerations(g);
                 setMenuOpen(false);
               }}
-              title={g === 'all' ? 'Alle Generationen' : `${g} Generationen`}
+              title={g === 'all' ? 'Alle' : String(g)}
               after={generations === g ? <Check size={18} strokeWidth={2.5} /> : null}
             />
           ))}
+        </List>
+        <List nested>
           <ListItem
             link
             chevron={false}

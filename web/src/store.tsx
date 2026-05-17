@@ -19,6 +19,37 @@ export interface CanvasState {
   centered: boolean;
 }
 
+export type TreeMode = 'Vorfahren' | 'Nachfahren';
+export type GenerationsPref = number | 'all';
+
+export interface Prefs {
+  defaultMode: TreeMode;
+  defaultGenerations: GenerationsPref;
+  showLifeData: boolean;
+}
+
+const PREFS_KEY = 'stammbaum:prefs';
+const DEFAULT_PREFS: Prefs = {
+  defaultMode: 'Vorfahren',
+  defaultGenerations: 'all',
+  showLifeData: true,
+};
+
+function loadPrefs(): Prefs {
+  if (typeof window === 'undefined') return DEFAULT_PREFS;
+  try {
+    const raw = window.localStorage.getItem(PREFS_KEY);
+    if (!raw) return DEFAULT_PREFS;
+    return { ...DEFAULT_PREFS, ...JSON.parse(raw) };
+  } catch {
+    return DEFAULT_PREFS;
+  }
+}
+
+function persistPrefs(p: Prefs) {
+  try { window.localStorage.setItem(PREFS_KEY, JSON.stringify(p)); } catch { /* empty */ }
+}
+
 interface StoreState {
   isLoaded: boolean;
   isImporting: boolean;
@@ -29,6 +60,7 @@ interface StoreState {
   rootPersonId: string | null;
   selectedTab: number;
   canvasByMode: Record<string, CanvasState>;
+  prefs: Prefs;
 }
 
 interface StoreApi extends StoreState {
@@ -39,6 +71,7 @@ interface StoreApi extends StoreState {
   setRootPerson: (id: string | null) => Promise<void>;
   getCanvas: (mode: string) => CanvasState;
   setCanvas: (mode: string, state: CanvasState) => void;
+  setPrefs: (patch: Partial<Prefs>) => void;
 }
 
 const StoreCtx = createContext<StoreApi | null>(null);
@@ -54,6 +87,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     rootPersonId: null,
     selectedTab: 0,
     canvasByMode: {},
+    prefs: loadPrefs(),
   });
 
   // Object URL cache: key (lowercase basename) -> blob URL
@@ -128,7 +162,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     for (const url of urlCache.current.values()) URL.revokeObjectURL(url);
     urlCache.current.clear();
     await clearAll();
-    setState({
+    setState((s) => ({
       isLoaded: false,
       isImporting: false,
       importError: null,
@@ -138,6 +172,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       rootPersonId: null,
       selectedTab: 0,
       canvasByMode: {},
+      prefs: s.prefs,
+    }));
+  }, []);
+
+  const setPrefs = useCallback((patch: Partial<Prefs>) => {
+    setState((s) => {
+      const next = { ...s.prefs, ...patch };
+      persistPrefs(next);
+      return { ...s, prefs: next };
     });
   }, []);
 
@@ -169,7 +212,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   return (
     <StoreCtx.Provider
-      value={{ ...state, setSelectedTab, importFiles, reset, getPhotoUrl, setRootPerson, getCanvas, setCanvas }}
+      value={{ ...state, setSelectedTab, importFiles, reset, getPhotoUrl, setRootPerson, getCanvas, setCanvas, setPrefs }}
     >
       {children}
     </StoreCtx.Provider>

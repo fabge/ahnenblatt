@@ -16,7 +16,7 @@ const MIN_SCALE = 0.1;
 const MAX_SCALE = 4;
 
 export function TreeCanvas({ layout, persons, mode, onPersonTap }: Props) {
-  const { getCanvas, setCanvas, getPhotoUrl } = useStore();
+  const { getCanvas, setCanvas, getPhotoUrl, prefs } = useStore();
   const containerRef = useRef<HTMLDivElement>(null);
 
   // View state (canvas viewport): scale and translation in container px.
@@ -203,6 +203,7 @@ export function TreeCanvas({ layout, persons, mode, onPersonTap }: Props) {
               y={n.y}
               onTap={() => onPersonTap(p.id)}
               getPhotoUrl={getPhotoUrl}
+              showLifeData={prefs.showLifeData}
             />
           );
         })}
@@ -217,12 +218,14 @@ function TreeCard({
   y,
   onTap,
   getPhotoUrl,
+  showLifeData,
 }: {
   person: Person;
   x: number;
   y: number;
   onTap: () => void;
   getPhotoUrl: (path: string) => Promise<string | null>;
+  showLifeData: boolean;
 }) {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
@@ -232,6 +235,8 @@ function TreeCard({
     } else { setUrl(null); }
     return () => { cancelled = true; };
   }, [person.photoPath, getPhotoUrl]);
+
+  const life = shortLife(person);
 
   return (
     <button
@@ -244,7 +249,7 @@ function TreeCard({
       </div>
       <div className="tree-card-text">
         <div className="tree-card-name">{fullName(person)}</div>
-        <div className="tree-card-sub">{shortLife(person)}</div>
+        {showLifeData && life && <div className="tree-card-sub">{life}</div>}
       </div>
     </button>
   );

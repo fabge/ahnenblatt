@@ -61,7 +61,12 @@ body {
 .tree-card-text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
 .tree-card-name {
   font-size: 13px; font-weight: 600; line-height: 1.2;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; word-break: break-word;
+}
+.tree-card-sub {
+  color: rgba(60, 60, 67, 0.6); font-size: 11px; line-height: 1.2;
+  margin-top: 2px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.tree-card-sub { color: rgba(60, 60, 67, 0.6); font-size: 11px; }
 .dark .tree-card-sub { color: rgba(235, 235, 245, 0.6); }
