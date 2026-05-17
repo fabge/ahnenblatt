@@ -6,7 +6,7 @@ import { TreePage } from './components/TreePage';
 import { PeoplePickerPage } from './components/PeoplePickerPage';
 import { SettingsView } from './components/SettingsView';
 import { PeopleListPage } from './components/PeopleListPage';
-import { PersonDetailPage } from './components/PersonDetailPage';
+import { PersonDetailPage, PersonDetailEmpty } from './components/PersonDetailPage';
 
 const treeRoutes = [
   {
@@ -36,6 +36,7 @@ const peopleRoutes = [
     master: true,
     detailRoutes: [
       { path: '/person/:id', component: PersonDetailPage },
+      { path: '/none', component: PersonDetailEmpty },
     ],
   },
 ];

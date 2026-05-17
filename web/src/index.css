@@ -179,6 +179,32 @@ body {
 .ios .toolbar.tabbar::after {
   display: none;
 }
+
+/* Match iOS contact-style alphabet dividers in person lists. */
+.ios .people-list .list-group-title,
+.ios .picker-list .list-group-title {
+  background-color: transparent;
+}
+.ios .people-list .list-group-title::before,
+.ios .picker-list .list-group-title::before {
+  display: none;
+}
+.ios .people-list .list-group-title::after,
+.ios .picker-list .list-group-title::after {
+  content: '';
+  position: absolute;
+  background-color: var(--f7-list-group-title-border-color);
+  display: block;
+  z-index: 15;
+  top: auto;
+  right: auto;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  width: 100%;
+  transform-origin: 50% 100%;
+  transform: scaleY(calc(1 / var(--f7-device-pixel-ratio)));
+}
 .tree-header-text { min-width: 0; }
 .tree-header-label {
   font-size: 11px;

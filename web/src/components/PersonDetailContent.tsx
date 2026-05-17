@@ -9,6 +9,7 @@ import { fullName, shortLife } from '../types';
 import type { Person } from '../types';
 import { PersonPhoto } from './PersonPhoto';
 import { PhotoFullscreen } from './PhotoFullscreen';
+import { useMediaQuery } from '../useMediaQuery';
 
 interface F7Router {
   navigate: (url: string, opts?: Record<string, unknown>) => void;
@@ -33,6 +34,7 @@ export function PersonDetailContent({
   const { persons, families, setRootPerson, getPhotoUrl } = useStore();
   const [photoOpen, setPhotoOpen] = useState(false);
   const [hasPhoto, setHasPhoto] = useState(false);
+  const isWide = useMediaQuery('(min-width: 768px)');
 
   const person = persons[personId];
 
@@ -74,7 +76,13 @@ export function PersonDetailContent({
   };
 
   const handleClose = () => {
-    if (f7router) f7router.back('/');
+    if (!f7router) return;
+    if (isWide) {
+      // Master-detail: swap the detail pane to a blank page; master stays mounted.
+      f7router.navigate('/none', { animate: false });
+    } else {
+      f7router.back('/');
+    }
   };
 
   return (

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { ReactNode } from 'react';
 import {
-  Page, Navbar, NavTitle, NavTitleLarge, Searchbar, BlockTitle,
+  Page, Navbar, NavTitle, Searchbar, BlockTitle,
   List, ListGroup, ListItem,
 } from 'framework7-react';
 import { useStore } from '../store';

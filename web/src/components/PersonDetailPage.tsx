@@ -1,3 +1,4 @@
+import { Page } from 'framework7-react';
 import { PersonDetailContent } from './PersonDetailContent';
 
 interface F7Route {
@@ -13,4 +14,8 @@ export function PersonDetailPage({ f7route, f7router }: { f7route: F7Route; f7ro
   const id = f7route.params.id;
   if (!id) return null;
   return <PersonDetailContent personId={id} f7router={f7router} />;
+}
+
+export function PersonDetailEmpty() {
+  return <Page style={{ backgroundColor: '#fff' }} />;
 }
